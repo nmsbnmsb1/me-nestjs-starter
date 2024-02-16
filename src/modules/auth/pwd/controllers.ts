@@ -1,28 +1,9 @@
 import { Body, Controller, Post, Request, Res, UseGuards } from '@nestjs/common';
 import { TAG_COMMON, filterDataFields } from 'me-cache-db';
-import { DtoRules } from '@config/validators';
-import { ValidateRules } from '@libs/validator';
 import { UserCDB } from '@modules/user/models/user';
 import { UserService } from '@modules/user/services/user';
 import { PwdRegisterGuard, PwdLoginGuard } from './guards';
-
-//Register
-export class RegisterDTO {
-	@ValidateRules(DtoRules.username(true))
-	username: string;
-
-	@ValidateRules(DtoRules.password(true))
-	password: string;
-}
-
-//login
-export class LoginDTO {
-	@ValidateRules(DtoRules.username(true))
-	username: string;
-
-	@ValidateRules(DtoRules.password(true))
-	password: string;
-}
+import { RegisterDTO } from './dtos';
 
 @Controller('auth')
 export class PwdAuthController {
