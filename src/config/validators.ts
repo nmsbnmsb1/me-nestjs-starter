@@ -1,6 +1,12 @@
 function requiredWrap(v: any) {
-	return (required = false) => {
-		v[required ? 'Required' : 'IsOptional'] = true;
+	return (required: any = false) => {
+		if (typeof required === 'boolean') {
+			v[required ? 'Required' : 'IsOptional'] = true;
+		} else {
+			for (let k in required) {
+				v[k] = required[k];
+			}
+		}
 		return v;
 	};
 }

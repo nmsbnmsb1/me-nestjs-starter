@@ -10,9 +10,9 @@ import { JWTExceptions } from './execptions';
 export class JWTAuthGuard implements CanActivate {
 	constructor(
 		private readonly configService: ConfigService,
+		private jwtEncryptService: JwtEncryptService,
 		@InjectModel(UserModel, 'sys')
-		private userRepo: typeof UserModel,
-		private jwtEncryptService: JwtEncryptService
+		private userRepo: typeof UserModel
 	) {}
 
 	async canActivate(context: ExecutionContext) {
@@ -24,16 +24,13 @@ export class JWTAuthGuard implements CanActivate {
 		let jwtData = this.jwtEncryptService.verify(jwt);
 		if (!jwtData) throw JWTExceptions.invalid_jwt;
 		//获取用户数据缓存
-		let userData = (await cgetData(
-			undefined,
-			{ uuid: jwtData.uuid },
-			[{ ...UserCDB.ns.uuid(), fields: `$jwt,$expireAt,${UserCDB.tags[TAG_COMMON]}` }],
-			undefined
-		)) as IData;
+		let userData = await cgetData(undefined, { uuid: jwtData.uuid }, [
+			{ ...UserCDB.ns.uuid(), fields: `$jwt,$expireAt,${UserCDB.tags[TAG_COMMON]}` },
+		]);
 		if (!userData) throw JWTExceptions.invalid_cache;
 		if (userData.$jwt !== jwt) throw JWTExceptions.jwt_not_match;
 		//延长缓存时间
-		cexpire(undefined, { ...UserCDB.ns.uuid(), pk: jwtData.uuid }, this.configService.get(`user.cacheExpireMS`));
+		cexpire(undefined, { ...UserCDB.ns.uuid(), nn: jwtData.uuid }, this.configService.get(`user.cacheExpireMS`));
 		//保存数据
 		delete userData.$jwt;
 		delete userData.$expireAt;

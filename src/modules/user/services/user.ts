@@ -11,10 +11,10 @@ import { UserModel, UserCDB } from '../models/user';
 export class UserService {
 	constructor(
 		private readonly configService: ConfigService,
-		@InjectModel(UserModel, 'sys')
-		private userRepo: typeof UserModel,
 		private readonly pwdService: PwdEncryptService,
-		private readonly jwtEncryptService: JwtEncryptService
+		private readonly jwtEncryptService: JwtEncryptService,
+		@InjectModel(UserModel, 'sys')
+		private userRepo: typeof UserModel
 	) {}
 
 	//sel -------------------------------------------------------------------
@@ -45,16 +45,16 @@ export class UserService {
 		}
 	}
 	public async delUserCache(uuid: string) {
-		return cdel(undefined, { ...UserCDB.ns.uuid(), pk: uuid });
+		return cdel(undefined, { ...UserCDB.ns.uuid(), nn: uuid });
 	}
 	//
 	//注册/登陆
-	public async register(user: any) {
+	public async register(userData: any) {
 		//如果有密码，加密密码
-		if (!user.uuid) user.uuid = CryptoUtils.uuid({ removeDash: true, lowerCase: true });
-		if (user.password) user.password = await this.pwdService.create(user.password);
+		if (!userData.uuid) userData.uuid = CryptoUtils.uuid({ removeDash: true, lowerCase: true });
+		if (userData.password) userData.password = await this.pwdService.create(userData.password);
 		//
-		return this.userRepo.create(user);
+		return this.userRepo.create(userData);
 	}
 	public async login(user: UserModel) {
 		//更新用户数据
