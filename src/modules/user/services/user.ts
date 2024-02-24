@@ -28,13 +28,13 @@ export class UserService {
 		//
 		return user;
 	}
-	public async getByUUID(uuid: string) {
+	public async getByUUID(uuid: string, raw: boolean = true) {
 		return sel(
 			undefined,
 			{ uuid },
 			[UserCDB.ns.uuid()],
 			async () => this.userRepo.findOne({ where: { uuid }, raw: true }),
-			(data) => this.userRepo.build(data as any, { raw: true, isNewRecord: false })
+			raw ? undefined : (data) => this.userRepo.build(data as any, { raw: true, isNewRecord: false })
 		);
 	}
 	//
@@ -70,6 +70,7 @@ export class UserService {
 			undefined,
 			validMS
 		);
+		//
 		return { jwt, user };
 	}
 }

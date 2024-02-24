@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { IData, TAG_COMMON, cexpire, cgetData } from 'me-cache-db';
+import { TAG_COMMON, cexpire, cgetData } from 'me-cache-db';
 import { ConfigService } from '@libs/config';
 import { JwtEncryptService } from '@libs/encrypt';
 import { UserCDB, UserModel } from '@modules/user/models/user';

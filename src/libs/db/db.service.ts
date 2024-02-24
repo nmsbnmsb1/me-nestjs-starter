@@ -8,12 +8,12 @@ import * as CDB from 'me-cache-db';
 export type DB = string | Sequelize;
 export type RepoOptions = { db: DB; tbn: string; tmodel: ModelCtor };
 export type RepoOptionsTbnLike = { db: DB; tbn?: string; tbnLike?: string; tmodel: ModelCtor };
-//
 export type Repo = ModelCtor;
 export type RepoData = {
 	db: Sequelize;
 	dbn: string;
 	tbn: string;
+	tbnAlias: string;
 	tmodel: ModelCtor;
 	repo: Repo;
 	rid: string;
@@ -30,6 +30,10 @@ export class DBService {
 	public isRepo(r: Repo | Partial<RepoOptions>) {
 		return typeof r === 'function';
 	}
+	public getTbnAlias(tbn: string) {
+		let index = tbn.indexOf(':');
+		return index < 0 ? tbn : tbn.substring(index + 1);
+	}
 	public async getRepoByOptions({ db, tbn, tmodel }: RepoOptions) {
 		let sequelize = this.getDBConnection(db);
 		if (!sequelize.isDefined(tbn)) {
@@ -44,6 +48,7 @@ export class DBService {
 				db: sequelize,
 				dbn: sequelize.getDatabaseName(),
 				tbn,
+				tbnAlias: this.getTbnAlias(tbn),
 				tmodel,
 				repo,
 				rid: `${sequelize.getDatabaseName()}.${tbn}`,
@@ -58,6 +63,7 @@ export class DBService {
 			options.db = r.sequelize;
 			options.dbn = r.sequelize.getDatabaseName();
 			options.tbn = (r.constructor as any).getTableName();
+			options.tbnAlias = this.getTbnAlias(options.tbn);
 			options.tmodel = r.constructor;
 			options.repo = r.constructor;
 			options.rid = `${options.dbn}.${options.tbn}`;
@@ -68,6 +74,7 @@ export class DBService {
 			options.db = r.sequelize;
 			options.dbn = r.sequelize.getDatabaseName();
 			options.tbn = r.getTableName();
+			options.tbnAlias = this.getTbnAlias(options.tbn);
 			options.tmodel = r;
 			options.repo = r;
 			options.rid = `${options.dbn}.${options.tbn}`;
@@ -80,6 +87,7 @@ export class DBService {
 		let tbn = r.tbn;
 		if (sequelize.isDefined(tbn)) {
 			let options: any = { db: sequelize, dbn, tbn };
+			options.tbnAlias = this.getTbnAlias(tbn);
 			options.tmodel = r.tmodel;
 			options.repo = sequelize.models[options.tbn];
 			options.rid = `${options.dbn}.${options.tbn}`;
@@ -128,10 +136,34 @@ export class DBService {
 		}
 		return data;
 	}
-	public async dbBulkCreate(r: Repo, data: any | any[], updateFields?: string[]) {
-		let dbData = await r.bulkCreate(!Array.isArray(data) ? [data] : (data as any), {
+	public async dbBulkCreate(
+		r: Repo,
+		data: any | any[],
+		updateFields?: string | string[] | { exclude: string | string[] },
+		conflictFields?: string | string[]
+	) {
+		let datas = !Array.isArray(data) ? [data] : (data as any);
+		if (typeof updateFields === 'string') {
+			updateFields = updateFields.split(',');
+		} else if ((updateFields as any)?.exclude) {
+			let { exclude } = updateFields as any;
+			if (typeof exclude === 'string') exclude = exclude.split(',');
+			updateFields = [];
+			for (let d of datas) {
+				for (let k in d) {
+					if (updateFields.indexOf(k) < 0 && exclude.indexOf(k) < 0) {
+						updateFields.push(k);
+					}
+				}
+			}
+		}
+		if (typeof conflictFields === 'string') {
+			conflictFields = conflictFields.split(',');
+		}
+		let dbData = await r.bulkCreate(datas, {
 			ignoreDuplicates: true,
-			updateOnDuplicate: updateFields,
+			updateOnDuplicate: updateFields as string[],
+			conflictAttributes: conflictFields as string[],
 		});
 		return !Array.isArray(data) ? dbData[0] : dbData;
 	}
