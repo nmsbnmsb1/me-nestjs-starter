@@ -3,7 +3,11 @@ import { Transform, TransformOptions } from 'class-transformer';
 export * from 'class-transformer';
 
 //转换成字符串数组
-export function TransformToIntArray(options: TransformOptions = {}): PropertyDecorator {
+export function TransformToNumber(options: TransformOptions = {}): PropertyDecorator {
+	return Transform((v) => JSON.parse(`{"value":${v.value}}`).value, options);
+}
+
+export function TransformToNumberArray(options: TransformOptions = {}): PropertyDecorator {
 	return Transform((v) => JSON.parse(`{"value":[${v.value}]}`).value, options);
 }
 

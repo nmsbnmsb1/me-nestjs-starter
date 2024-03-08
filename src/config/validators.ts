@@ -22,6 +22,14 @@ export const DtoRules = {
 		IsArray: true,
 		IsInt: { args: [true], options: { each: true } },
 	}),
+	number: requiredWrap({ name: 'number', TransformToNumber: true, IsNumber: true }),
+	numbers: requiredWrap({
+		name: 'numbers',
+		TransformToNumberArray: true,
+		IsArray: true,
+		IsNumber: { args: [true], options: { each: true } },
+	}),
+	//
 	id: requiredWrap({ name: 'id', IsInt: true }),
 	ids: requiredWrap({
 		name: 'ids',
