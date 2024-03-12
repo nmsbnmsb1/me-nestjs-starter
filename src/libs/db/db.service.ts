@@ -1,5 +1,5 @@
 import path from 'path';
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { UnknownElementException } from '@nestjs/core/errors/exceptions/unknown-element.exception';
 import { getConnectionToken } from '@nestjs/sequelize';
@@ -48,13 +48,21 @@ export function getSequelizeConfig(name: string, thisConfig: any, dbConfig: any)
 }
 
 @Injectable()
-export class DBService {
+export class DBService implements OnApplicationShutdown {
 	private dynamicDBMap: { [db: string]: Sequelize } = {};
 
 	constructor(
 		private moduleRef: ModuleRef,
 		private configService: ConfigService
 	) {}
+
+	//销毁sequelize实例
+	async onApplicationShutdown() {
+		for (let n in this.dynamicDBMap) {
+			await this.dynamicDBMap[n].close();
+		}
+		this.dynamicDBMap = {};
+	}
 
 	//获取一个数据库连接
 	public async getDBConnection(db: DB) {

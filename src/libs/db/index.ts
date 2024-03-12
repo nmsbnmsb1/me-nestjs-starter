@@ -7,7 +7,7 @@ import { DBService, getSequelizeConfig } from './db.service';
 //
 export * as CacheDB from 'me-cache-db';
 export class DBModule {
-	public static register(): DynamicModule {
+	public static forRoot(): DynamicModule {
 		let imports = [];
 		//导入所有的数据库
 		for (let key in baseConfig.db) {
