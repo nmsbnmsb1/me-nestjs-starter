@@ -1,9 +1,13 @@
+import path from 'path';
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
+import { UnknownElementException } from '@nestjs/core/errors/exceptions/unknown-element.exception';
 import { getConnectionToken } from '@nestjs/sequelize';
+import { SequelizeCoreModule } from '@nestjs/sequelize/dist/sequelize-core.module';
 import { QueryTypes } from 'sequelize';
 import { Sequelize, ModelCtor, Model, getAttributes } from 'sequelize-typescript';
 import * as CDB from 'me-cache-db';
+import { ConfigService } from '@libs/config';
 
 export type DB = string | Sequelize;
 export type RepoOptions = { db: DB; tbn: string; tmodel: ModelCtor };
@@ -19,13 +23,67 @@ export type RepoData = {
 	rid: string;
 };
 
+export function getSequelizeConfig(name: string, thisConfig: any, dbConfig: any) {
+	let baseConfig = dbConfig[`base_${thisConfig.dialect}`];
+	let sequelizeConfig = {
+		database: name,
+		autoLoadModels: true,
+		synchronize: true,
+		repositoryMode: true,
+		//通用基础配置
+		...baseConfig,
+		//单独配置
+		name,
+		...thisConfig,
+	};
+	//其他
+	if (thisConfig.dialect === 'sqlite') {
+		if (!thisConfig.storage) {
+			sequelizeConfig.storage = path.resolve(baseConfig.storage, `${name}.sqlite`);
+		}
+	}
+	//
+	//console.log(sequelizeConfig);
+	return sequelizeConfig;
+}
+
 @Injectable()
 export class DBService {
-	constructor(private moduleRef: ModuleRef) {}
+	private dynamicDBMap: { [db: string]: Sequelize } = {};
+
+	constructor(
+		private moduleRef: ModuleRef,
+		private configService: ConfigService
+	) {}
 
 	//获取一个数据库连接
-	public getDBConnection(db: DB) {
-		return typeof db !== 'string' ? db : this.moduleRef.get(getConnectionToken(db), { strict: false });
+	public async getDBConnection(db: DB) {
+		if (typeof db !== 'string') return db;
+		//
+		try {
+			return this.moduleRef.get(getConnectionToken(db), { strict: false });
+		} catch (e) {
+			if (!(e instanceof UnknownElementException)) {
+				throw e;
+			}
+		}
+		//
+		if (!this.dynamicDBMap[db]) {
+			//
+			let dbConfig = this.configService.get('db');
+			for (let key in dbConfig) {
+				let thisConfig = dbConfig[key];
+				if (
+					thisConfig.matches &&
+					((typeof thisConfig.matches === 'function' && thisConfig.matches(db, key)) || db.match(thisConfig.matches))
+				) {
+					let sequelizeConfig = getSequelizeConfig(db, thisConfig, dbConfig);
+					this.dynamicDBMap[db] = await (SequelizeCoreModule as any).createConnectionFactory(sequelizeConfig);
+					break;
+				}
+			}
+		}
+		return this.dynamicDBMap[db];
 	}
 	public isRepo(r: Repo | Partial<RepoOptions>) {
 		return typeof r === 'function';
@@ -35,7 +93,7 @@ export class DBService {
 		return index < 0 ? tbn : tbn.substring(index + 1);
 	}
 	public async getRepoByOptions({ db, tbn, tmodel }: RepoOptions) {
-		let sequelize = this.getDBConnection(db);
+		let sequelize = typeof db === 'string' ? await this.getDBConnection(db) : db;
 		if (!sequelize.isDefined(tbn)) {
 			await sequelize
 				.define(tbn, getAttributes(tmodel.prototype || tmodel), { tableName: tbn, timestamps: true, paranoid: true })
@@ -55,7 +113,7 @@ export class DBService {
 			};
 		return repo as Repo;
 	}
-	public getRepoData(r: Repo | Model | RepoOptions | any): any {
+	public async getRepoData(r: Repo | Model | RepoOptions | any) {
 		if (r.$options) return r.$options;
 		//
 		if (r instanceof Model) {
@@ -80,9 +138,8 @@ export class DBService {
 			options.rid = `${options.dbn}.${options.tbn}`;
 			return (r.$options = options);
 		}
-
 		//
-		let sequelize = this.getDBConnection(r.db);
+		let sequelize = typeof r.db === 'string' ? await this.getDBConnection(r.db) : r.db;
 		let dbn = sequelize.getDatabaseName();
 		let tbn = r.tbn;
 		if (sequelize.isDefined(tbn)) {
@@ -93,12 +150,11 @@ export class DBService {
 			options.rid = `${options.dbn}.${options.tbn}`;
 			return ((r as any).$options = options);
 		}
-		//
-		return this.getRepoByOptions(r).then((repo) => (repo as any).$options);
+		return ((await this.getRepoByOptions(r)) as any).$options;
 	}
 	//db
 	public async showTables(db: DB, tbnLike?: string): Promise<{ name: string }[]> {
-		let sequelize = this.getDBConnection(db);
+		let sequelize = typeof db === 'string' ? await this.getDBConnection(db) : db;
 		if (sequelize.getDialect() === 'sqlite') {
 			return sequelize.query(
 				`SELECT name FROM sqlite_master WHERE type='table' ${!tbnLike ? '' : `and name like '${tbnLike}'`};`,
@@ -121,7 +177,10 @@ export class DBService {
 				repo = await this.getRepoByOptions(r as RepoOptions);
 				data = await query(repo);
 			} else {
-				for (let t of await this.showTables(this.getDBConnection(db), tbnLike)) {
+				let sequelize = await this.getDBConnection(db);
+				(r as RepoOptions).db = sequelize;
+				//
+				for (let t of await this.showTables(sequelize, tbnLike)) {
 					(r as RepoOptions).tbn = t.name;
 					//
 					let tr = await this.getRepoByOptions(r as RepoOptions);
