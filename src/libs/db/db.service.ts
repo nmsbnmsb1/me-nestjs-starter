@@ -4,8 +4,8 @@ import { ModuleRef } from '@nestjs/core';
 import { UnknownElementException } from '@nestjs/core/errors/exceptions/unknown-element.exception';
 import { getConnectionToken } from '@nestjs/sequelize';
 import { SequelizeCoreModule } from '@nestjs/sequelize/dist/sequelize-core.module';
-import { QueryTypes } from 'sequelize';
-import { Sequelize, ModelCtor, Model, getAttributes } from 'sequelize-typescript';
+import { Sequelize, QueryTypes, Model } from 'sequelize';
+import { ModelCtor, getAttributes } from 'sequelize-typescript';
 import * as CDB from 'me-cache-db';
 import { ConfigService } from '@libs/config';
 
@@ -171,6 +171,9 @@ export class DBService implements OnApplicationShutdown {
 		}
 		return [];
 	}
+	public async existsTable(db: DB, tbnLike?: string) {
+		return (await this.showTables(db, tbnLike)).length > 0;
+	}
 	public async dbGetInTables(r: Repo | RepoOptionsTbnLike, query: (repo: Repo) => Promise<any>) {
 		let repo: Repo;
 		let data: CDB.IData | CDB.IData[];
@@ -233,5 +236,8 @@ export class DBService implements OnApplicationShutdown {
 			conflictAttributes: conflictFields as string[],
 		});
 		return !Array.isArray(data) ? dbData[0] : dbData;
+	}
+	public async dbDelete(r: Repo, ids: any[]) {
+		return r.destroy({ where: { id: ids }, force: true });
 	}
 }
