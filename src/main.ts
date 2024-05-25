@@ -20,7 +20,7 @@ import * as CDB from 'me-cache-db';
 	imports: [
 		//系统模块
 		ConfigModule,
-		DBModule.register(),
+		DBModule.forRoot(),
 		EncryptModule,
 		ExceptionModule,
 		ValidatorModule,
