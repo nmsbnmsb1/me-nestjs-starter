@@ -1,6 +1,6 @@
 function requiredWrap(v: any) {
 	return (required: any = false) => {
-		let nv = { ...v };
+		let nv = {};
 		if (typeof required === 'boolean') {
 			nv[required ? 'Required' : 'IsOptional'] = true;
 		} else {
@@ -8,7 +8,7 @@ function requiredWrap(v: any) {
 				nv[k] = required[k];
 			}
 		}
-		return nv;
+		return { ...nv, ...v };
 	};
 }
 
@@ -16,7 +16,7 @@ export const DtoRules = {
 	//base
 	string: requiredWrap({}),
 	strings: requiredWrap({ TransformToStringArray: true, IsArray: true }),
-	int: requiredWrap({ IsInt: true }),
+	int: requiredWrap({ TransformToStringArray: true, IsInt: true }),
 	ints: requiredWrap({
 		TransformToIntArray: true,
 		IsArray: true,
