@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import * as CacheDb from 'me-cache-db';
+import * as CacheDB from 'me-cache-db';
 import { ConfigService } from '@libs/config';
 import { JwtEncryptService } from '@libs/encrypt';
 import { UserCDB, UserModel } from '@modules/user/models/user';
@@ -24,13 +24,13 @@ export class JWTAuthGuard implements CanActivate {
 		let jwtData = this.jwtEncryptService.verify(jwt);
 		if (!jwtData) throw JWTExceptions.invalid_jwt;
 		//获取用户数据缓存
-		let userData = await CacheDb.cgetData(undefined, { uuid: jwtData.uuid }, [
+		let userData = await CacheDB.cgetData(undefined, { uuid: jwtData.uuid }, [
 			{ ...UserCDB.ns.uuid(), fields: `$jwt,$expireAt,id,uuid,username,lastLoginAt` },
 		]);
 		if (!userData) throw JWTExceptions.invalid_cache;
 		if (userData.$jwt !== jwt) throw JWTExceptions.jwt_not_match;
 		//延长缓存时间
-		CacheDb.cexpire(
+		CacheDB.cexpire(
 			undefined,
 			{ ...UserCDB.ns.uuid(), nn: jwtData.uuid },
 			this.configService.get(`user.cacheExpireMS`)

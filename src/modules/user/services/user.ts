@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { CryptoUtils } from 'me-utils';
-import * as CacheDb from 'me-cache-db';
+import * as CacheDB from 'me-cache-db';
 import { ConfigService } from '@libs/config';
 import { PwdEncryptService, JwtEncryptService } from '@libs/encrypt';
 import { UserExceptions } from '../execptions';
@@ -24,7 +24,7 @@ export class UserService {
 
 	//Select -------------------------------------------------------------------
 	//-------------------------------------------------------------------
-	public fieldScheme = new CacheDb.FieldScheme({
+	public fieldScheme = new CacheDB.FieldScheme({
 		[UserService.FieldSchemeAll]: `id,uuid,username,password,lastLoginAt`,
 		[UserService.FieldSchemeCommon]: `id,uuid,username,lastLoginAt`,
 	});
@@ -32,7 +32,7 @@ export class UserService {
 	public async dbGetOne(
 		key: 'id' | 'uuid' | 'username',
 		value: any,
-		selFields: CacheDb.Fields,
+		selFields: CacheDB.Fields,
 		checker: 'exists' | 'not_exists',
 		raw: boolean = true
 	) {
@@ -47,10 +47,10 @@ export class UserService {
 		//
 		return user as any;
 	}
-	public async getByUUID(uuid: string, selFields: CacheDb.Fields, raw: boolean = true) {
+	public async getByUUID(uuid: string, selFields: CacheDB.Fields, raw: boolean = true) {
 		let fields = this.fieldScheme.getFields(selFields);
 		let userData = { uuid };
-		let user = await CacheDb.sel(
+		let user = await CacheDB.sel(
 			undefined,
 			userData,
 			[{ ...UserCDB.ns.uuid(), ...fields }],
@@ -68,7 +68,7 @@ export class UserService {
 		}
 	}
 	public async delUserCache(uuid: string) {
-		return CacheDb.cdel(undefined, { ...UserCDB.ns.uuid(), nn: uuid });
+		return CacheDB.cdel(undefined, { ...UserCDB.ns.uuid(), nn: uuid });
 	}
 	//注册/登陆
 	public async register(userData: any) {
@@ -85,7 +85,7 @@ export class UserService {
 		//创建用户缓存数据
 		let jwt = this.jwtEncryptService.create({ uuid: user.uuid });
 		let validMS = this.configService.get(`user.cacheExpireMS`);
-		await CacheDb.csetData(
+		await CacheDB.csetData(
 			undefined,
 			{ $jwt: jwt, $expireAt: Date.now() + validMS, ...user.dataValues },
 			[UserCDB.ns.uuid()],

@@ -6,7 +6,7 @@ import { getConnectionToken } from '@nestjs/sequelize';
 import { SequelizeCoreModule } from '@nestjs/sequelize/dist/sequelize-core.module';
 import { Sequelize, QueryTypes, Model } from 'sequelize';
 import { ModelCtor, getAttributes } from 'sequelize-typescript';
-import * as CacheDb from 'me-cache-db';
+import * as CacheDB from 'me-cache-db';
 import { ConfigService } from '@libs/config';
 
 export type DB = string | Sequelize;
@@ -179,7 +179,7 @@ export class DBService implements OnApplicationShutdown {
 	}
 	public async dbGetInTables(r: Repo | RepoOptionsTbnLike, query: (repo: Repo) => Promise<any>) {
 		let repo: Repo;
-		let data: CacheDb.IData | CacheDb.IData[];
+		let data: CacheDB.IData | CacheDB.IData[];
 		//
 		if (this.isRepo(r)) {
 			repo = r as Repo;

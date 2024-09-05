@@ -14,7 +14,7 @@ import { PwdAuthModule } from '@modules/auth/pwd';
 import { JWTAuthModule } from '@modules/auth/jwt';
 import { UserModule } from '@modules/user';
 //
-import * as CacheDb from 'me-cache-db';
+import * as CacheDB from 'me-cache-db';
 
 @Module({
 	imports: [
@@ -51,8 +51,8 @@ export class AppModule {}
 	}
 	//me-cache-db
 	{
-		let config = configService.get('cdb');
-		CacheDb.initCache(config.defaultCID, { ...config.cache }, config.expireMS);
+		let config = configService.get('cachedb');
+		CacheDB.initCache(config.defaultCID, { ...config.cache }, config.expireMS);
 	}
 	//
 	await app.listen(configService.get('port'));

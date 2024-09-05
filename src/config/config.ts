@@ -20,7 +20,7 @@ export default {
 		cacheExpireMS: 3 * (24 * 60 * 60 * 1000),
 	},
 	//cdb
-	cdb: {
+	cachedb: {
 		defaultCID: 'json',
 		cache: { [JSONCache.CID]: new JSONCache(path.resolve('runtime/cache')) },
 		expireMS: 3 * (24 * 60 * 60 * 1000),
