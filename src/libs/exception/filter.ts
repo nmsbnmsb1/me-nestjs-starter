@@ -40,7 +40,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 			id = HttpStatus.INTERNAL_SERVER_ERROR;
 			description = exception.message;
 			status = HttpStatus.INTERNAL_SERVER_ERROR;
-			this.logger.error(`${path}: ${exception.stack}}`);
+			this.logger.error(`${path}: ${status} - ${description}\n${exception.stack}}`);
 		}
 		//
 		response.status(status);

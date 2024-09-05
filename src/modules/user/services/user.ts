@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { CryptoUtils } from 'me-utils';
-import { cdel, csetData, sel } from 'me-cache-db';
+import * as CacheDb from 'me-cache-db';
 import { ConfigService } from '@libs/config';
 import { PwdEncryptService, JwtEncryptService } from '@libs/encrypt';
 import { UserExceptions } from '../execptions';
@@ -17,37 +17,59 @@ export class UserService {
 		private userRepo: typeof UserModel
 	) {}
 
-	//sel -------------------------------------------------------------------
-	//-----------------------------------------------------------------------
+	//const -------------------------------------------------------------------
+	//-------------------------------------------------------------------
+	public static FieldSchemeAll = `All`;
+	public static FieldSchemeCommon = `Common`;
+
+	//Select -------------------------------------------------------------------
+	//-------------------------------------------------------------------
+	public fieldScheme = new CacheDb.FieldScheme({
+		[UserService.FieldSchemeAll]: `id,uuid,username,password,lastLoginAt`,
+		[UserService.FieldSchemeCommon]: `id,uuid,username,lastLoginAt`,
+	});
 	//根据主键获取用户对象
-	public async dbGetByKV(key: 'id' | 'uuid' | 'username', value: any, checker: 'exists' | 'not_exists') {
-		let user = await this.userRepo.findOne({ where: { [key]: value } });
+	public async dbGetOne(
+		key: 'id' | 'uuid' | 'username',
+		value: any,
+		selFields: CacheDb.Fields,
+		checker: 'exists' | 'not_exists',
+		raw: boolean = true
+	) {
+		let user = await this.userRepo.findOne({
+			attributes: this.fieldScheme.pickFields(selFields),
+			where: { [key]: value },
+			raw,
+		});
 		//checker
 		if (checker === 'exists' && !user) throw UserExceptions.user_not_exists;
 		else if (checker === 'not_exists' && user) throw UserExceptions.user_exists;
 		//
-		return user;
+		return user as any;
 	}
-	public async getByUUID(uuid: string, raw: boolean = true) {
-		return sel(
+	public async getByUUID(uuid: string, selFields: CacheDb.Fields, raw: boolean = true) {
+		let fields = this.fieldScheme.getFields(selFields);
+		let userData = { uuid };
+		let user = await CacheDb.sel(
 			undefined,
-			{ uuid },
-			[UserCDB.ns.uuid()],
+			userData,
+			[{ ...UserCDB.ns.uuid(), ...fields }],
 			async () => this.userRepo.findOne({ where: { uuid }, raw: true }),
 			raw ? undefined : (data) => this.userRepo.build(data as any, { raw: true, isNewRecord: false })
 		);
+		return user;
 	}
-	//
-	public async checkPassword(password: string, user: any) {
+	//Composite -------------------------------------------------------------------
+	//-------------------------------------------------------------------
+	public async checkPassword(password: string, user: { password: string }) {
 		let ret = await this.pwdService.verify(password, user.password);
 		if (!ret) {
 			throw UserExceptions.invalid_password;
 		}
 	}
 	public async delUserCache(uuid: string) {
-		return cdel(undefined, { ...UserCDB.ns.uuid(), nn: uuid });
+		return CacheDb.cdel(undefined, { ...UserCDB.ns.uuid(), nn: uuid });
 	}
-	//
 	//注册/登陆
 	public async register(userData: any) {
 		//如果有密码，加密密码
@@ -63,7 +85,7 @@ export class UserService {
 		//创建用户缓存数据
 		let jwt = this.jwtEncryptService.create({ uuid: user.uuid });
 		let validMS = this.configService.get(`user.cacheExpireMS`);
-		await csetData(
+		await CacheDb.csetData(
 			undefined,
 			{ $jwt: jwt, $expireAt: Date.now() + validMS, ...user.dataValues },
 			[UserCDB.ns.uuid()],

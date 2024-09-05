@@ -6,7 +6,7 @@ import { getConnectionToken } from '@nestjs/sequelize';
 import { SequelizeCoreModule } from '@nestjs/sequelize/dist/sequelize-core.module';
 import { Sequelize, QueryTypes, Model } from 'sequelize';
 import { ModelCtor, getAttributes } from 'sequelize-typescript';
-import * as CDB from 'me-cache-db';
+import * as CacheDb from 'me-cache-db';
 import { ConfigService } from '@libs/config';
 
 export type DB = string | Sequelize;
@@ -46,6 +46,9 @@ export function getSequelizeConfig(name: string, thisConfig: any, dbConfig: any)
 	//console.log(sequelizeConfig);
 	return sequelizeConfig;
 }
+
+export type BulkCreatUpdateFields = string | string[] | { exclude: string | string[] };
+export type BulkCreatConflictFields = string | string[];
 
 @Injectable()
 export class DBService implements OnApplicationShutdown {
@@ -121,7 +124,7 @@ export class DBService implements OnApplicationShutdown {
 			};
 		return repo as Repo;
 	}
-	public async getRepoData(r: Repo | Model | RepoOptions | any) {
+	public async getRepoData(r: Repo | Model | RepoOptions | any): Promise<RepoData> {
 		if (r.$options) return r.$options;
 		//
 		if (r instanceof Model) {
@@ -147,17 +150,17 @@ export class DBService implements OnApplicationShutdown {
 			return (r.$options = options);
 		}
 		//
-		let sequelize = typeof r.db === 'string' ? await this.getDBConnection(r.db) : r.db;
-		let dbn = sequelize.getDatabaseName();
-		let tbn = r.tbn;
-		if (sequelize.isDefined(tbn)) {
-			let options: any = { db: sequelize, dbn, tbn };
-			options.tbnAlias = this.getTbnAlias(tbn);
-			options.tmodel = r.tmodel;
-			options.repo = sequelize.models[options.tbn];
-			options.rid = `${options.dbn}.${options.tbn}`;
-			return ((r as any).$options = options);
-		}
+		// let sequelize = typeof r.db === 'string' ? await this.getDBConnection(r.db) : r.db;
+		// let dbn = sequelize.getDatabaseName();
+		// let tbn = r.tbn;
+		// if (sequelize.isDefined(tbn)) {
+		// 	let options: any = { db: sequelize, dbn, tbn };
+		// 	options.tbnAlias = this.getTbnAlias(tbn);
+		// 	options.tmodel = r.tmodel;
+		// 	options.repo = sequelize.models[options.tbn];
+		// 	options.rid = `${options.dbn}.${options.tbn}`;
+		// 	return ((r as any).$options = options);
+		// }
 		return ((await this.getRepoByOptions(r)) as any).$options;
 	}
 	//db
@@ -176,7 +179,7 @@ export class DBService implements OnApplicationShutdown {
 	}
 	public async dbGetInTables(r: Repo | RepoOptionsTbnLike, query: (repo: Repo) => Promise<any>) {
 		let repo: Repo;
-		let data: CDB.IData | CDB.IData[];
+		let data: CacheDb.IData | CacheDb.IData[];
 		//
 		if (this.isRepo(r)) {
 			repo = r as Repo;
@@ -209,8 +212,8 @@ export class DBService implements OnApplicationShutdown {
 	public async dbBulkCreate(
 		r: Repo,
 		data: any | any[],
-		updateFields?: string | string[] | { exclude: string | string[] },
-		conflictFields?: string | string[]
+		updateFields?: BulkCreatUpdateFields,
+		conflictFields?: BulkCreatConflictFields
 	) {
 		let datas = !Array.isArray(data) ? [data] : (data as any);
 		if (typeof updateFields === 'string') {
@@ -237,7 +240,7 @@ export class DBService implements OnApplicationShutdown {
 		});
 		return !Array.isArray(data) ? dbData[0] : dbData;
 	}
-	public async dbDelete(r: Repo, ids: any[]) {
-		return r.destroy({ where: { id: ids }, force: true });
+	public async dbDelete(r: Repo, field: string, values: any[]) {
+		return r.destroy({ where: { [field]: values }, force: true });
 	}
 }
