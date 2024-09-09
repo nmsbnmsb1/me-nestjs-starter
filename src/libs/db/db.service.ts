@@ -4,9 +4,8 @@ import { ModuleRef } from '@nestjs/core';
 import { UnknownElementException } from '@nestjs/core/errors/exceptions/unknown-element.exception';
 import { getConnectionToken } from '@nestjs/sequelize';
 import { SequelizeCoreModule } from '@nestjs/sequelize/dist/sequelize-core.module';
-import { Sequelize, QueryTypes, Model } from 'sequelize';
+import { Sequelize, QueryTypes, Model, Order, Op } from 'sequelize';
 import { ModelCtor, getAttributes } from 'sequelize-typescript';
-import * as CacheDB from 'me-cache-db';
 import { ConfigService } from '@libs/config';
 
 export type DB = string | Sequelize;
@@ -174,12 +173,25 @@ export class DBService implements OnApplicationShutdown {
 		}
 		return [];
 	}
-	public async existsTable(db: DB, tbnLike?: string) {
+	public async existsTable(db: DB, tbnLike: string) {
 		return (await this.showTables(db, tbnLike)).length > 0;
+	}
+	public async dbGetIn(
+		r: Repo | RepoOptions,
+		field: string,
+		values: any[],
+		selFields: string | string[],
+		order: Order = [['id', 'ASC']],
+		raw: boolean = true
+	) {
+		let repo = this.isRepo(r) ? r : (await this.getRepoData(r)).repo;
+		let attributes = !Array.isArray(selFields) ? selFields.split(',') : selFields;
+		let where = { [field]: { [Op.in]: values } };
+		return repo.findAll({ attributes, where, order, raw });
 	}
 	public async dbGetInTables(r: Repo | RepoOptionsTbnLike, query: (repo: Repo) => Promise<any>) {
 		let repo: Repo;
-		let data: CacheDB.IData | CacheDB.IData[];
+		let data: any;
 		//
 		if (this.isRepo(r)) {
 			repo = r as Repo;
@@ -218,6 +230,7 @@ export class DBService implements OnApplicationShutdown {
 		let datas = !Array.isArray(data) ? [data] : (data as any);
 		if (typeof updateFields === 'string') {
 			updateFields = updateFields.split(',');
+			if (updateFields.indexOf('updatedAt') < 0) updateFields.push('updatedAt');
 		} else if ((updateFields as any)?.exclude) {
 			let { exclude } = updateFields as any;
 			if (typeof exclude === 'string') exclude = exclude.split(',');
@@ -228,6 +241,9 @@ export class DBService implements OnApplicationShutdown {
 						updateFields.push(k);
 					}
 				}
+			}
+			if (exclude.indexOf('updatedAt') < 0 && updateFields.indexOf('updatedAt') < 0) {
+				updateFields.push('updatedAt');
 			}
 		}
 		if (typeof conflictFields === 'string') {
@@ -240,7 +256,7 @@ export class DBService implements OnApplicationShutdown {
 		});
 		return !Array.isArray(data) ? dbData[0] : dbData;
 	}
-	public async dbDelete(r: Repo, field: string, values: any[]) {
-		return r.destroy({ where: { [field]: values }, force: true });
+	public async dbDelete(r: Repo, field: string, values: any[], force = false) {
+		return r.destroy({ where: { [field]: values }, force });
 	}
 }
