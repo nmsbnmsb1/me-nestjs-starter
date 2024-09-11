@@ -2,6 +2,7 @@ import path from 'path';
 import { JSONCache } from 'me-cache-db/lib/cache/json';
 
 export default {
+	apiPrefix: '',
 	//配置
 	port: 1234,
 	//加密

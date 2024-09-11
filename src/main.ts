@@ -30,12 +30,19 @@ import * as CacheDB from 'me-cache-db';
 		UserModule,
 	],
 })
-export class AppModule {}
+export class AppModule { }
 
 //bootstrap
 (async () => {
 	let app = await NestFactory.create(AppModule, { cors: true, rawBody: true });
 	let configService = app.get(ConfigService);
+	//global-api-prefix
+	{
+		let apiPrefix = configService.get('apiPrefix');
+		if (apiPrefix) {
+			app.setGlobalPrefix(apiPrefix);
+		}
+	}
 	//Swagger
 	if (process.env.NODE_ENV === 'development') {
 		let pkg = JSON.parse(fs.readFileSync(path.resolve('package.json')) as any);
