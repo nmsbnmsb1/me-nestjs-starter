@@ -34,8 +34,16 @@ export class AppModule { }
 
 //bootstrap
 (async () => {
-	let app = await NestFactory.create(AppModule, { cors: true, rawBody: true });
+	let app = await NestFactory.create(AppModule, { rawBody: true });
 	let configService = app.get(ConfigService);
+	//enable-cros
+	{
+		app.enableCors({
+			origin: '*', // 允许所有源（或指定的源）
+			allowedHeaders: 'Content-Type,Authorization,Token',
+			exposedHeaders: 'Token', // 允许客户端读取 Token 头
+		});
+	}
 	//global-api-prefix
 	{
 		let apiPrefix = configService.get('apiPrefix');
