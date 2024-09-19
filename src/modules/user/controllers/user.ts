@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, Request } from '@nestjs/common';
+import { Controller, UseGuards, Request, Get, Post } from '@nestjs/common';
 import { UserService } from '@modules/user/services/user';
 import { JWTAuthGuard } from '@modules/auth/jwt/guard';
 
@@ -6,9 +6,17 @@ import { JWTAuthGuard } from '@modules/auth/jwt/guard';
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
-	@Post('test')
+	@Get('data')
 	@UseGuards(JWTAuthGuard)
-	async test(@Request() req) {
-		//
+	async data(@Request() req) {
+		//返回用户信息
+		return req.user.dataValues;
+	}
+
+	@Post('logout')
+	@UseGuards(JWTAuthGuard)
+	async logout(@Request() req) {
+		await this.userService.delUserCache(req.user.uuid);
+		return true;
 	}
 }
