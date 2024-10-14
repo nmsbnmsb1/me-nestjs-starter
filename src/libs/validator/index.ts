@@ -22,8 +22,8 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 					transform: true,
 					exceptionFactory: (errors) =>
 						new AppException({
-							id: 'invalid_params',
 							http_status: HttpStatus.BAD_REQUEST,
+							id: 'invalid_params',
 							description: (() => {
 								//console.log(errors);
 								let descriptions = flatten(

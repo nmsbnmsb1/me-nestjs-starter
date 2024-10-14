@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { HttpException, ExceptionFilter, Catch, ArgumentsHost, Logger, HttpStatus } from '@nestjs/common';
+import { getExceptionMessage } from './define';
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
@@ -16,11 +17,12 @@ export class AppExceptionFilter implements ExceptionFilter {
 		let description;
 		//
 		//console.log('msg', exception);
-		//
-		if (exception.___r) {
-			id = exception.id;
-			description = exception.description || exception.id;
+		if (exception.__r) {
 			status = exception.http_status || HttpStatus.INTERNAL_SERVER_ERROR;
+			//
+			let { id: eid, description: edesc } = getExceptionMessage(exception);
+			id = eid;
+			description = edesc;
 			this.logger.error(`${path}: ${status} - ${description}`);
 		} else if (exception instanceof HttpException) {
 			status = exception.getStatus() || HttpStatus.INTERNAL_SERVER_ERROR;
@@ -37,9 +39,9 @@ export class AppExceptionFilter implements ExceptionFilter {
 			}
 			this.logger.error(`${path}: ${status} - ${description}`);
 		} else {
+			status = HttpStatus.INTERNAL_SERVER_ERROR;
 			id = HttpStatus.INTERNAL_SERVER_ERROR;
 			description = exception.message;
-			status = HttpStatus.INTERNAL_SERVER_ERROR;
 			this.logger.error(`${path}: ${status} - ${description}\n${exception.stack}}`);
 		}
 		//
