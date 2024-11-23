@@ -4,22 +4,22 @@ import { registerByMap } from '@libs/exception';
 export const JWTExceptions = registerByMap({
 	invalid_jwt: {
 		http_status: 403,
-		description: { dev: 'Invalid JWT', pro: 'Unauthorized' },
+		dev: 'Invalid JWT', pro: 'Unauthorized'
 	},
 	jwt_not_exists: {
 		http_status: 403,
-		description: { dev: 'No JWT found in Headers', pro_key: 'invalid_jwt' },
+		dev: 'No JWT found in Headers', pro_key: 'invalid_jwt'
 	},
 	invalid_cache: {
 		http_status: 403,
-		description: { dev: 'No CacheData for this JWT', pro_key: 'invalid_jwt' },
+		dev: 'No CacheData for this JWT', pro_key: 'invalid_jwt'
 	},
 	jwt_not_match: {
 		http_status: 403,
-		description: { dev: `Cached JWT doesn't match`, pro_key: 'invalid_jwt' },
+		dev: `Cached JWT doesn't match`, pro_key: 'invalid_jwt'
 	},
 	invalid_user_cache: {
 		http_status: 403,
-		description: { dev: 'No CacheData for user', pro_key: 'invalid_jwt' },
+		dev: 'No CacheData for user', pro_key: 'invalid_jwt'
 	},
 });

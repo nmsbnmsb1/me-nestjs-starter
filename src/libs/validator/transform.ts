@@ -20,7 +20,8 @@ export function TransformToBooleanNumber(options: TransformOptions = {}): Proper
 		if (v.value === 'true') return 1;
 		if (v.value === 'false') return 0;
 		if (v.value > 0) return 1;
-		if (v.value <= 0) return 0;
+		if (v.value === 0) return 0;
+		if (v.value < 0) return undefined;
 		if (v.value === null || v.value === undefined) return undefined;
 		return v.value ? 1 : 0;
 	}, options);
