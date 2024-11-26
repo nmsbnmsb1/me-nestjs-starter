@@ -5,6 +5,7 @@ import { Module } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule as NestSwaggerModule } from '@nestjs/swagger';
 //系统子模块
 import { ConfigModule, ConfigService } from '@libs/config';
+import { ClsModule } from "@libs/cls"
 import { DBModule } from '@libs/db';
 import { EncryptModule } from '@libs/encrypt';
 import { ExceptionModule } from '@libs/exception';
@@ -20,6 +21,7 @@ import * as CacheDB from 'me-cache-db';
 	imports: [
 		//系统模块
 		ConfigModule,
+		ClsModule,
 		DBModule.forRoot(),
 		EncryptModule,
 		ExceptionModule,

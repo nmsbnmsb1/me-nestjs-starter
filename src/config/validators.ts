@@ -1,3 +1,8 @@
+const Pre = {
+	Length_2_3: () => ({ args: [2, 32], options: { message: '#length_2_32' } }),
+	Min_0: () => ({ args: [0], options: { message: '#min_0' } })
+}
+
 function requiredWrap(v: any) {
 	return (required: any = false) => {
 		let nv = {};
@@ -14,7 +19,7 @@ function requiredWrap(v: any) {
 export const DtoRules = {
 	//base
 	string: requiredWrap({}),
-	strings: requiredWrap({ TransformToStringArray: true, IsArray: true }),
+	strings: requiredWrap({ TransformToStringArray: true, IsArray: true, }),
 	int: requiredWrap({ TransformToNumber: true, IsInt: true }),
 	ints: requiredWrap({
 		TransformToNumberArray: true,
@@ -28,6 +33,7 @@ export const DtoRules = {
 		IsNumber: { args: [true], options: { each: true } },
 	}),
 	boolean: requiredWrap({ TransformToBooleanNumber: true }),
+	json: requiredWrap({ TransformToJSONObject: true }),
 	//
 	id: requiredWrap({ TransformToNumber: true, IsInt: true }),
 	ids: requiredWrap({
@@ -36,8 +42,8 @@ export const DtoRules = {
 		IsInt: { args: [true], options: { each: true } },
 	}),
 	page: requiredWrap({ TransformToNumber: true, IsInt: true, IsPositive: true }),
-	pageSize: requiredWrap({ TransformToNumber: true, IsInt: true, Min: 0 }),
+	pageSize: requiredWrap({ TransformToNumber: true, IsInt: true, Min: Pre.Min_0() }),
 	//用户名
-	username: requiredWrap({ Length: [2, 32], IsAlphaNumericDash: true }),
-	password: requiredWrap({ Length: [2, 32] /*IsMd5: false*/ }),
+	username: requiredWrap({ Length: Pre.Length_2_3(), IsAlphaNumericDash: true }),
+	password: requiredWrap({ Length: Pre.Length_2_3() /*IsMd5: false*/ }),
 };

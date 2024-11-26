@@ -1,44 +1,24 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
-let isDevelopment = process.env.NODE_ENV !== 'production';
-
 //错误配置对象
-export type Description = { dev: string; pro_key?: string; pro?: string };
-export interface ExceptionMap {
-	[id: string]: string | ({ http_status?: number } & Description);
-}
-export type Exception = { id: string; http_status?: number; description?: string } & Partial<Description>;
-export function registerByMap<ExceptionMap>(exceptions: ExceptionMap): {
-	[P in keyof ExceptionMap]: Exception;
-} {
+export type Exception = { __reg: boolean, __m: { [id: string]: Exception }, id: string; description?: any, pro_id?: string, http_status?: number };
+export type ExceptionMap = { [id: string]: Omit<Exception, '__reg' | '__m' | 'id'> }
+export function registerByMap<ExceptionMap>(m: ExceptionMap): { [P in keyof ExceptionMap]: Exception; } {
 	let newm: any = {};
-	for (let id in exceptions) {
-		let v: any = exceptions[id];
-		typeof v === 'string'
-			? (newm[id] = { __r: true, __m: newm, id, http_status: HttpStatus.INTERNAL_SERVER_ERROR, description: v })
-			: (newm[id] = { __r: true, __m: newm, id, http_status: HttpStatus.INTERNAL_SERVER_ERROR, ...v });
+	for (let id in m) {
+		newm[id] = { __reg: true, __m: newm, id, http_status: HttpStatus.INTERNAL_SERVER_ERROR };
+		//
+		let e = m[id] as any
+		for (let k in e) newm[k] = e[k]
 	}
 	return newm;
 }
-export function getExceptionMessage(execption: Exception) {
-	if ((execption as any).__r && !execption.description) {
-		if (isDevelopment) {
-			return { id: execption.id, description: execption.dev };
-		} else if (execption.pro) {
-			return { id: execption.id, description: execption.pro };
-		} else if (execption.pro_key) {
-			return getExceptionMessage((execption as any).__m[execption.pro_key]);
-		}
-	}
-	return { id: execption.id, description: execption.description };
+
+//创建异常
+export function createAppException(e: Omit<Exception, '__reg' | '__m'>, http_status: number = HttpStatus.INTERNAL_SERVER_ERROR, options?: any) {
+	return new HttpException(e, http_status, options)
 }
 
-//异常
-export class AppException extends HttpException {
-	constructor(execption: Exception, options?: any) {
-		super(getExceptionMessage(execption), execption.http_status || HttpStatus.INTERNAL_SERVER_ERROR, options);
-	}
-}
 
 //定义2
 //export type ExceptionList = (string | Exception)[];

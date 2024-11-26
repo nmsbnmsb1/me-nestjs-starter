@@ -5,7 +5,7 @@ import baseConfig from '@config/config';
 //导出服务
 export { ConfigService } from '@nestjs/config';
 //导出模块
-export let ConfigModule = NestConfigModule.forRoot({
+export const ConfigModule = NestConfigModule.forRoot({
 	isGlobal: true,
 	ignoreEnvFile: true,
 	load: [
@@ -13,7 +13,7 @@ export let ConfigModule = NestConfigModule.forRoot({
 			let envConfig = {};
 			try {
 				envConfig = require(`../../config/config.${process.env.NODE_ENV}`).default;
-			} catch (e) {}
+			} catch (e) { }
 			//
 			return merge(baseConfig, envConfig);
 		},

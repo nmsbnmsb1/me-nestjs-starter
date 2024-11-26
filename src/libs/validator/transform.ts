@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common';
 import { Transform, TransformOptions } from 'class-transformer';
 
 export * from 'class-transformer';
@@ -24,5 +25,22 @@ export function TransformToBooleanNumber(options: TransformOptions = {}): Proper
 		if (v.value < 0) return undefined;
 		if (v.value === null || v.value === undefined) return undefined;
 		return v.value ? 1 : 0;
+	}, options);
+}
+
+export function TransformToJSONObject(options: TransformOptions = {}): PropertyDecorator {
+	return Transform((v) => {
+		let value = v.value
+		try {
+			if (typeof value === 'string') {
+				if (!value.startsWith('{')) value = `{${value}}`;
+				return JSON.parse(value);
+			} else {
+				throw { id: 'invalid_json_string', http_status: HttpStatus.BAD_REQUEST }
+			}
+
+		} catch (error) {
+			throw { id: 'invalid_json_string', http_status: HttpStatus.BAD_REQUEST }
+		}
 	}, options);
 }
