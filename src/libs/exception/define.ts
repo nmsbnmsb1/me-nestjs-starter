@@ -4,14 +4,16 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 export type Exception = { __reg: boolean, __m: { [id: string]: Exception }, id: string; description?: any, pro_id?: string, http_status?: number };
 export type ExceptionMap = { [id: string]: Omit<Exception, '__reg' | '__m' | 'id'> }
 export function registerByMap<ExceptionMap>(m: ExceptionMap): { [P in keyof ExceptionMap]: Exception; } {
-	let newm: any = {};
+	let nm: any = {};
 	for (let id in m) {
-		newm[id] = { __reg: true, __m: newm, id, http_status: HttpStatus.INTERNAL_SERVER_ERROR };
+		let ne = { __reg: true, __m: nm, id, http_status: HttpStatus.INTERNAL_SERVER_ERROR };
 		//
 		let e = m[id] as any
-		for (let k in e) newm[k] = e[k]
+		for (let k in e) ne[k] = e[k]
+		//
+		nm[id] = ne
 	}
-	return newm;
+	return nm;
 }
 
 //创建异常

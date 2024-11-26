@@ -4,7 +4,7 @@ import { AppClsStore } from '@libs/cls';
 import { ClsService } from 'nestjs-cls';
 import { Exception } from './define';
 
-const isDevelopment = false;
+const isDevelopment = process.env.NODE_ENV !== 'production';
 const internal_server_error = 'INTERNAL_SERVER_ERROR'.toLowerCase()
 
 @Catch()
