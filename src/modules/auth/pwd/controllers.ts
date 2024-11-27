@@ -1,6 +1,9 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { UserService } from '@modules/user/services/user';
 import { LoginDTO, RegisterDTO } from './dtos';
+import { UserModel } from '@modules/user/models/user';
+import { isDevelopment } from '@libs/utils';
+import { PwdAuthExceptions } from './execptions';
 
 @Controller('auth')
 export class PwdAuthController {
@@ -20,10 +23,19 @@ export class PwdAuthController {
 	@Post('loginByUsername')
 	//@UseGuards(PwdLoginGuard)
 	async loginByUsername(@Body() loginDto: LoginDTO, @Res({ passthrough: true }) res) {
-		//检查用户是否已存在
-		let user = await this.userService.dbGetOne('username', loginDto.username, UserService.FieldSchemeAll, 'exists', false);
-		//检查密码是否相符
-		await this.userService.checkPassword(loginDto.password, user);
+		let user: any
+		try {
+			//检查用户是否已存在
+			user = await this.userService.dbGetOne('username', loginDto.username, UserService.FieldSchemeAll, 'exists', false);
+			//检查密码是否相符
+			await this.userService.checkPassword(loginDto.password, user);
+		} catch (e) {
+			if (isDevelopment) {
+				throw e
+			} else {
+				throw PwdAuthExceptions.invalid_user_pwd
+			}
+		}
 		//执行登陆
 		let { jwt, user: loginUser } = await this.userService.login(user);
 		//jwt需要在header中返回
