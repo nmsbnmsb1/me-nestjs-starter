@@ -36,11 +36,11 @@ export function TransformToJSONObject(options: TransformOptions = {}): PropertyD
 				if (!value.startsWith('{')) value = `{${value}}`;
 				return JSON.parse(value);
 			} else {
-				throw { id: 'invalid_json_string', http_status: HttpStatus.BAD_REQUEST }
+				throw { id: 'invalid_param', description: `${v.key}.invalid_json_string`, http_status: HttpStatus.BAD_REQUEST }
 			}
 
 		} catch (error) {
-			throw { id: 'invalid_json_string', http_status: HttpStatus.BAD_REQUEST }
+			throw { id: 'invalid_param', description: `${v.key}.invalid_json_string`, http_status: HttpStatus.BAD_REQUEST }
 		}
 	}, options);
 }

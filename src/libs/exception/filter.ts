@@ -1,10 +1,11 @@
 import { Request, Response } from 'express';
 import { HttpException, ExceptionFilter, Catch, ArgumentsHost, Logger, HttpStatus } from '@nestjs/common';
 import { AppClsStore } from '@libs/cls';
+import { isDevelopment } from '@libs/utils';
+
 import { ClsService } from 'nestjs-cls';
 import { Exception } from './define';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
 const internal_server_error = 'INTERNAL_SERVER_ERROR'.toLowerCase()
 
 @Catch()
@@ -70,7 +71,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 		} else if (e instanceof Error) {
 			http_status = HttpStatus.INTERNAL_SERVER_ERROR;
 			id = internal_server_error;
-			description = e.message
+			if (isDevelopment) description = e.message
 			this.logger.error(`${path}: ${http_status} - ${id} ${e.message}\n${e.stack}}`);
 		} else {
 			let ee = e as any

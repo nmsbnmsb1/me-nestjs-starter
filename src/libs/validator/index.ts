@@ -1,23 +1,21 @@
-import { flatten } from 'lodash';
 import { APP_PIPE } from '@nestjs/core';
-import { HttpStatus, ValidationPipe, Global, Module, HttpException } from '@nestjs/common';
-import { createAppException } from '@libs/exception';
+import { HttpStatus, ValidationPipe, Global, Module } from '@nestjs/common';
+import { isDevelopment } from '@libs/utils';
 
 export * from './decorator';
 export * as Validators from './extends';
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
 /**
  * Converts a camelCase or PascalCase string to snake_case.
  * @param {string} input - The camelCase or PascalCase string.
  * @returns {string} - The snake_case string.
  */
-function toSnakeCase(input) {
-	return input
-		.replace(/([a-z])([A-Z])/g, '$1_$2') // Insert _ between lowercase and uppercase letters
-		.replace(/([A-Z])([A-Z][a-z])/g, '$1_$2') // Handle consecutive uppercase letters
-		.toLowerCase(); // Convert the entire string to lowercase
-}
+// function toSnakeCase(input) {
+// 	return input
+// 		.replace(/([a-z])([A-Z])/g, '$1_$2') // Insert _ between lowercase and uppercase letters
+// 		.replace(/([A-Z])([A-Z][a-z])/g, '$1_$2') // Handle consecutive uppercase letters
+// 		.toLowerCase(); // Convert the entire string to lowercase
+// }
 
 //------------------------------------------
 @Global()
