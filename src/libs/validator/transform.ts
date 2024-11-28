@@ -1,21 +1,42 @@
-import { HttpStatus } from '@nestjs/common';
 import { Transform, TransformOptions } from 'class-transformer';
+import { getValidationExecption } from './utils';
 
 export * from 'class-transformer';
 
-//转换成字符串数组
+//转换数字
 export function TransformToNumber(options: TransformOptions = {}): PropertyDecorator {
-	return Transform((v) => JSON.parse(`{"value":${v.value}}`).value, options);
+	return Transform((v) => {
+		try {
+			return JSON.parse(`{"value":${v.value}}`).value
+		} catch (e) {
+			throw getValidationExecption(v.key, 'isNumberString')
+		}
+	}, options);
 }
 
+//转换数字数组
 export function TransformToNumberArray(options: TransformOptions = {}): PropertyDecorator {
-	return Transform((v) => JSON.parse(`{"value":[${v.value}]}`).value, options);
+	return Transform((v) => {
+		try {
+			return JSON.parse(`[${v.value}]`)
+		} catch (e) {
+			throw getValidationExecption(v.key, 'isNumberArray')
+		}
+	}, options);
 }
 
+//转换字符串数组
 export function TransformToStringArray(options: TransformOptions = {}): PropertyDecorator {
-	return Transform((v) => JSON.parse(`{"value":["${v.value.split(',').join(`","`)}"]}`).value, options);
+	return Transform((v) => {
+		try {
+			return JSON.parse(`["${v.value.split(',').join(`","`)}"]`)
+		} catch (e) {
+			throw getValidationExecption(v.key, 'isStringArray')
+		}
+	}, options);
 }
 
+//转换成布尔数字
 export function TransformToBooleanNumber(options: TransformOptions = {}): PropertyDecorator {
 	return Transform((v) => {
 		if (v.value === 'true') return 1;
@@ -28,19 +49,18 @@ export function TransformToBooleanNumber(options: TransformOptions = {}): Proper
 	}, options);
 }
 
+//转换json对象
 export function TransformToJSONObject(options: TransformOptions = {}): PropertyDecorator {
 	return Transform((v) => {
 		let value = v.value
+		if (typeof value !== 'string') {
+			throw getValidationExecption(v.key, 'isJSONString')
+		}
 		try {
-			if (typeof value === 'string') {
-				if (!value.startsWith('{')) value = `{${value}}`;
-				return JSON.parse(value);
-			} else {
-				throw { id: 'invalid_param', description: `${v.key}.invalid_json_string`, http_status: HttpStatus.BAD_REQUEST }
-			}
-
-		} catch (error) {
-			throw { id: 'invalid_param', description: `${v.key}.invalid_json_string`, http_status: HttpStatus.BAD_REQUEST }
+			if (!value.startsWith('{')) value = `{${value}}`;
+			return JSON.parse(value);
+		} catch (e) {
+			throw getValidationExecption(v.key, 'isJSONString')
 		}
 	}, options);
 }

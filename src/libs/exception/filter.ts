@@ -40,8 +40,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 				this.logger.error(`${path}: ${http_status} - ${id} ${description || ''}`);
 			} else {
 				id = ee.pro_id
-				if (ee.__m[ee.pro_id]) description = ee.__m[ee.pro_id].description
-				else description = ee.description
+				description = ee.__m[ee.pro_id]?.description || ee.description
 				this.logger.error(`${path}: ${http_status} - ${ee.pro_id}(${ee.id}) ${description || ''}`);
 			}
 		} else if (e instanceof HttpException) {
@@ -59,19 +58,18 @@ export class AppExceptionFilter implements ExceptionFilter {
 					this.logger.error(`${path}: ${http_status} - ${id} ${description || ''}`);
 				} else {
 					id = ee.pro_id
-					if (ee.__m?.[ee.pro_id]) description = ee.__m[ee.pro_id].description
-					else description = ee.description
+					description = ee.__m?.[ee.pro_id]?.description || ee.description
 					this.logger.error(`${path}: ${http_status} - ${ee.pro_id}(${ee.id}) ${description || ''}`);
 				}
 			} else {
 				id = isDevelopment && resp.error ? resp.error.replace(/\s/g, '_') : internal_server_error;
 				description = isDevelopment && resp.message ? resp.message : internal_server_error;
-				this.logger.error(`${path}: ${http_status} - ${id} ${description || ''}`);
+				this.logger.error(`${path}: ${http_status} - ${id} ${resp.message || internal_server_error}`);
 			}
 		} else if (e instanceof Error) {
 			http_status = HttpStatus.INTERNAL_SERVER_ERROR;
 			id = internal_server_error;
-			if (isDevelopment) description = e.message
+			if (isDevelopment) description = { message: e.message, stack: e.stack }
 			this.logger.error(`${path}: ${http_status} - ${id} ${e.message}\n${e.stack}}`);
 		} else {
 			let ee = e as any

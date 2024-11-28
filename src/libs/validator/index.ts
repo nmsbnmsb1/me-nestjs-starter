@@ -1,6 +1,7 @@
 import { APP_PIPE } from '@nestjs/core';
-import { HttpStatus, ValidationPipe, Global, Module } from '@nestjs/common';
+import { ValidationPipe, Global, Module } from '@nestjs/common';
 import { isDevelopment } from '@libs/utils';
+import { getValidationExecption } from './utils';
 
 export * from './decorator';
 export * as Validators from './extends';
@@ -32,23 +33,19 @@ export * as Validators from './extends';
 					exceptionFactory: (errors) => {
 						let descriptions = []
 						for (let e of errors) {
-							if (!e.constraints) continue;
-							for (let key in e.constraints) {
-								let message = e.constraints[key]
-								//如果是自定义信息
-								if (message.startsWith('#')) {
-									descriptions.push(`${e.property}.${message.substring(1)}`)
-								} else {
-									descriptions.push(`${e.property}.${key}`)
+							if (e.constraints) {
+								for (let key in e.constraints) {
+									let message = e.constraints[key]
+									if (message.startsWith('#')) {
+										descriptions.push({ fieldName: e.property, message: message.substring(1) })
+									} else {
+										descriptions.push({ fieldName: e.property, message: key })
+									}
 								}
 							}
 						}
 						//
-						let http_status = HttpStatus.BAD_REQUEST
-						let id = 'invalid_param'
-						let description = descriptions;
-						//
-						return { id, http_status, description }
+						return getValidationExecption(descriptions)
 					}
 				}),
 		},

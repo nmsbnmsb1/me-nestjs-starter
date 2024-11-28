@@ -45,5 +45,5 @@ export const DtoRules = {
 	pageSize: requiredWrap({ TransformToNumber: true, IsInt: true, Min: Pre.Min_0() }),
 	//用户名
 	username: requiredWrap({ Length: Pre.Length_2_3(), IsAlphaNumericDash: true }),
-	password: requiredWrap({ Length: Pre.Length_2_3() /*IsMd5: false*/ }),
+	password: requiredWrap({ Length: Pre.Length_2_3(), IsMd5: true }),
 };
