@@ -63,8 +63,8 @@ export class AppExceptionFilter implements ExceptionFilter {
 				}
 			} else {
 				id = isDevelopment && resp.error ? resp.error.replace(/\s/g, '_') : internal_server_error;
-				description = isDevelopment && resp.message ? resp.message : internal_server_error;
-				this.logger.error(`${path}: ${http_status} - ${id} ${resp.message || internal_server_error}`);
+				description = isDevelopment && resp.message ? resp.message : undefined;
+				this.logger.error(`${path}: ${http_status} - ${id} ${resp.message || ''}`);
 			}
 		} else if (e instanceof Error) {
 			http_status = HttpStatus.INTERNAL_SERVER_ERROR;

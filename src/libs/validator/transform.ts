@@ -53,9 +53,8 @@ export function TransformToBooleanNumber(options: TransformOptions = {}): Proper
 export function TransformToJSONObject(options: TransformOptions = {}): PropertyDecorator {
 	return Transform((v) => {
 		let value = v.value
-		if (typeof value !== 'string') {
-			throw getValidationExecption(v.key, 'isJSONString')
-		}
+		if (typeof value === 'object') return value;
+		//
 		try {
 			if (!value.startsWith('{')) value = `{${value}}`;
 			return JSON.parse(value);

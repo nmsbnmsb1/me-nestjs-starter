@@ -33,6 +33,7 @@ export const DtoRules = {
 		IsNumber: { args: [true], options: { each: true } },
 	}),
 	boolean: requiredWrap({ TransformToBooleanNumber: true }),
+	object: requiredWrap({ IsObject: true }),
 	json: requiredWrap({ TransformToJSONObject: true }),
 	//
 	id: requiredWrap({ TransformToNumber: true, IsInt: true }),
