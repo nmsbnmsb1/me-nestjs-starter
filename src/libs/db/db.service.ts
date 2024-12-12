@@ -6,6 +6,7 @@ import { getConnectionToken } from '@nestjs/sequelize';
 import { SequelizeCoreModule } from '@nestjs/sequelize/dist/sequelize-core.module';
 import { Sequelize, QueryTypes, Model, Order, Op } from 'sequelize';
 import { ModelCtor, getAttributes } from 'sequelize-typescript';
+import * as CacheDB from 'me-cache-db';
 import { ConfigService } from '@libs/config';
 
 export type DB = string | Sequelize;
@@ -79,7 +80,6 @@ export class DBService implements OnApplicationShutdown {
 		}
 		//
 		if (!this.dynamicDBMap[db]) {
-			//
 			let dbConfig = this.configService.get('db');
 			for (let key in dbConfig) {
 				let thisConfig = dbConfig[key];
@@ -111,8 +111,8 @@ export class DBService implements OnApplicationShutdown {
 		}
 		//
 		let repo: any = sequelize.models[tbn];
-		if (!repo.$options)
-			repo.$options = {
+		if (!repo.$data)
+			repo.$data = {
 				db: sequelize,
 				dbn: sequelize.getDatabaseName(),
 				tbn,
@@ -123,44 +123,36 @@ export class DBService implements OnApplicationShutdown {
 			};
 		return repo as Repo;
 	}
-	public async getRepoData(r: Repo | Model | RepoOptions | any): Promise<RepoData> {
-		if (r.$options) return r.$options;
-		//
-		if (r instanceof Model) {
-			let options: any = {};
-			options.db = r.sequelize;
-			options.dbn = r.sequelize.getDatabaseName();
-			options.tbn = (r.constructor as any).getTableName();
-			options.tbnAlias = this.getTbnAlias(options.tbn);
-			options.tmodel = r.constructor;
-			options.repo = r.constructor;
-			options.rid = `${options.dbn}.${options.tbn}`;
-			return ((r as any).$options = options);
-		}
+	public async getRepoData(r: Repo | Model | RepoOptions | RepoData): Promise<RepoData> {
+		if ((r as any).$data) return (r as any).$data;
+		//RepoData
+		if ((r as RepoData).db && (r as RepoData).repo && (r as RepoData).rid) return r as RepoData
+		//Repo
 		if (typeof r === 'function') {
-			let options: any = {};
-			options.db = r.sequelize;
-			options.dbn = r.sequelize.getDatabaseName();
-			options.tbn = r.getTableName();
-			options.tbnAlias = this.getTbnAlias(options.tbn);
-			options.tmodel = r;
-			options.repo = r;
-			options.rid = `${options.dbn}.${options.tbn}`;
-			return (r.$options = options);
+			let data: any = {};
+			data.db = r.sequelize;
+			data.dbn = r.sequelize.getDatabaseName();
+			data.tbn = r.getTableName();
+			data.tbnAlias = this.getTbnAlias(data.tbn);
+			data.tmodel = r;
+			data.repo = r;
+			data.rid = `${data.dbn}.${data.tbn}`;
+			return ((r as any).$data = data);
 		}
-		//
-		// let sequelize = typeof r.db === 'string' ? await this.getDBConnection(r.db) : r.db;
-		// let dbn = sequelize.getDatabaseName();
-		// let tbn = r.tbn;
-		// if (sequelize.isDefined(tbn)) {
-		// 	let options: any = { db: sequelize, dbn, tbn };
-		// 	options.tbnAlias = this.getTbnAlias(tbn);
-		// 	options.tmodel = r.tmodel;
-		// 	options.repo = sequelize.models[options.tbn];
-		// 	options.rid = `${options.dbn}.${options.tbn}`;
-		// 	return ((r as any).$options = options);
-		// }
-		return ((await this.getRepoByOptions(r)) as any).$options;
+		//Model
+		if (r instanceof Model) {
+			let data: any = {};
+			data.db = r.sequelize;
+			data.dbn = r.sequelize.getDatabaseName();
+			data.tbn = (r.constructor as any).getTableName();
+			data.tbnAlias = this.getTbnAlias(data.tbn);
+			data.tmodel = r.constructor;
+			data.repo = r.constructor;
+			data.rid = `${data.dbn}.${data.tbn}`;
+			return ((r as any).$data = data);
+		}
+		//RepoOptions
+		return ((await this.getRepoByOptions(r)) as any).$data;
 	}
 	//db
 	public async showTables(db: DB, tbnLike?: string): Promise<{ name: string }[]> {
@@ -177,14 +169,14 @@ export class DBService implements OnApplicationShutdown {
 		return (await this.showTables(db, tbnLike)).length > 0;
 	}
 	public async dbGetIn(
-		r: Repo | RepoOptions,
+		r: Repo | Model | RepoOptions | RepoData,
 		field: string,
 		values: any[],
 		selFields: string | string[],
 		order: Order = [['id', 'ASC']],
 		raw: boolean = true
 	) {
-		let repo = this.isRepo(r) ? r : (await this.getRepoData(r)).repo;
+		let { repo } = await this.getRepoData(r);
 		let attributes = !Array.isArray(selFields) ? selFields.split(',') : selFields;
 		let where = { [field]: { [Op.in]: values } };
 		return repo.findAll({ attributes, where, order, raw });
@@ -205,7 +197,6 @@ export class DBService implements OnApplicationShutdown {
 			} else {
 				let sequelize = await this.getDBConnection(db);
 				(r as RepoOptions).db = sequelize;
-				//
 				for (let t of await this.showTables(sequelize, tbnLike)) {
 					(r as RepoOptions).tbn = t.name;
 					//
@@ -221,8 +212,28 @@ export class DBService implements OnApplicationShutdown {
 		}
 		return data;
 	}
+	public async dbGetPage(
+		r: Repo | Model | RepoOptions | RepoData,
+		sqlOrFields: string | CacheDB.SqlOptions[],
+		page: number, pageSize: number, countField: string = 'id',
+		raw: boolean = true
+	) {
+		let { db, repo } = await this.getRepoData(r);
+		let sql: string;
+		if (typeof sqlOrFields === 'string') sql = sqlOrFields;
+		else sql = CacheDB.getLeftJoinSql(sqlOrFields);
+		//
+		let query = async (sql: string) => db.query(sql, { type: QueryTypes.SELECT, raw: true });
+		let pageData = await CacheDB.doPage(page, pageSize, countField, sql, query);
+		if (!raw && pageData.datas?.length) {
+			for (let i = 0; i < pageData.datas.length; i++) {
+				pageData.datas[i] = repo.build(pageData.datas[i], { raw: true, isNewRecord: false })
+			}
+		}
+		return pageData;
+	}
 	public async dbBulkCreate(
-		r: Repo,
+		r: Repo | Model | RepoOptions | RepoData,
 		data: any | any[],
 		updateFields?: BulkCreatUpdateFields,
 		conflictFields?: BulkCreatConflictFields
@@ -249,14 +260,16 @@ export class DBService implements OnApplicationShutdown {
 		if (typeof conflictFields === 'string') {
 			conflictFields = conflictFields.split(',');
 		}
-		let dbData = await r.bulkCreate(datas, {
+		let { repo } = await this.getRepoData(r);
+		let dbData = await repo.bulkCreate(datas, {
 			ignoreDuplicates: true,
 			updateOnDuplicate: updateFields as string[],
 			conflictAttributes: conflictFields as string[],
 		});
 		return !Array.isArray(data) ? dbData[0] : dbData;
 	}
-	public async dbDelete(r: Repo, field: string, values: any[], force = false) {
-		return r.destroy({ where: { [field]: values }, force });
+	public async dbDelete(r: Repo | Model | RepoOptions | RepoData, field: string, values: any[], force = false) {
+		let { repo } = await this.getRepoData(r);
+		return repo.destroy({ where: { [field]: values }, force });
 	}
 }

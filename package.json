@@ -1,6 +1,6 @@
 {
 	"name": "me-nestjs-starter",
-	"version": "0.0.2",
+	"version": "0.0.5",
 	"description": "NestJS脚手架",
 	"author": "",
 	"private": true,
