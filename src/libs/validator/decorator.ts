@@ -4,7 +4,7 @@ import * as ClassValidator from './extends';
 //规则定义
 export type RuleArgs = any[];
 //规则详细定义
-export type RuleOptions = {
+export interface RuleOptions {
 	args: RuleArgs;
 	options?: Transform.TransformOptions | ClassValidator.ValidationOptions;
 	// validate?: (value: any, args?: ClassValidator.ValidationArguments) => boolean;
@@ -12,7 +12,7 @@ export type RuleOptions = {
 	// defaultMessage?: string | ((args?: ClassValidator.ValidationArguments) => string);
 };
 //规则集
-export type Rules = { name: string; [name: string]: any | RuleArgs | RuleOptions };
+export type Rules = { name: string;[name: string]: any | RuleArgs | RuleOptions };
 export function ValidateRules(
 	rules: Rules,
 	transformOptions?: Transform.TransformOptions,

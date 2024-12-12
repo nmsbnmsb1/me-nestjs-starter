@@ -9,10 +9,10 @@ import { ModelCtor, getAttributes } from 'sequelize-typescript';
 import { ConfigService } from '@libs/config';
 
 export type DB = string | Sequelize;
-export type RepoOptions = { db: DB; tbn: string; tmodel: ModelCtor };
-export type RepoOptionsTbnLike = { db: DB; tbn?: string; tbnLike?: string; tmodel: ModelCtor };
 export type Repo = ModelCtor;
-export type RepoData = {
+export interface RepoOptions { db: DB; tbn: string; tmodel: ModelCtor };
+export interface RepoOptionsTbnLike { db: DB; tbn?: string; tbnLike?: string; tmodel: ModelCtor };
+export interface RepoData {
 	db: Sequelize;
 	dbn: string;
 	tbn: string;
@@ -56,7 +56,7 @@ export class DBService implements OnApplicationShutdown {
 	constructor(
 		private moduleRef: ModuleRef,
 		private configService: ConfigService
-	) {}
+	) { }
 
 	//销毁sequelize实例
 	async onApplicationShutdown() {

@@ -2,7 +2,7 @@ import { HttpStatus } from "@nestjs/common"
 
 export const ExecptionId = 'invalid_validation'
 
-export type ValidationExecption = {
+export interface ValidationExecption {
     http_status: number,
     id: string,
     description: { fieldName: string, message: string }[]

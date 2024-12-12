@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 //错误配置对象
-export type Exception = { __reg: boolean, __m: { [id: string]: Exception }, id: string; description?: any, pro_id?: string, http_status?: number };
+export interface Exception { __reg: boolean, __m: { [id: string]: Exception }, id: string; description?: any, pro_id?: string, http_status?: number };
 export type ExceptionMap = { [id: string]: Omit<Exception, '__reg' | '__m' | 'id'> }
 export function registerByMap<ExceptionMap>(m: ExceptionMap): { [P in keyof ExceptionMap]: Exception; } {
 	let nm: any = {};

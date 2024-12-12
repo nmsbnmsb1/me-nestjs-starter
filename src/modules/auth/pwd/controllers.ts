@@ -1,8 +1,7 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { UserService } from '@modules/user/services/user';
-import { LoginDTO, RegisterDTO } from './dtos';
-import { UserModel } from '@modules/user/models/user';
 import { isDevelopment } from '@libs/utils';
+import { LoginDTO, RegisterDTO } from './dtos';
 import { PwdAuthExceptions } from './execptions';
 
 @Controller('auth')
