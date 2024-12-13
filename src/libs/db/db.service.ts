@@ -95,12 +95,12 @@ export class DBService implements OnApplicationShutdown {
 		}
 		return this.dynamicDBMap[db];
 	}
-	public isRepo(r: Repo | Partial<RepoOptions>) {
-		return typeof r === 'function';
-	}
 	public getTbnAlias(tbn: string) {
 		let index = tbn.indexOf(':');
 		return index < 0 ? tbn : tbn.substring(index + 1);
+	}
+	public isRepo(r: Repo | Partial<RepoOptions>) {
+		return typeof r === 'function';
 	}
 	public async getRepoByOptions({ db, tbn, tmodel }: RepoOptions) {
 		let sequelize = typeof db === 'string' ? await this.getDBConnection(db) : db;
@@ -113,10 +113,8 @@ export class DBService implements OnApplicationShutdown {
 		let repo: any = sequelize.models[tbn];
 		if (!repo.$data)
 			repo.$data = {
-				db: sequelize,
-				dbn: sequelize.getDatabaseName(),
-				tbn,
-				tbnAlias: this.getTbnAlias(tbn),
+				db: sequelize, dbn: sequelize.getDatabaseName(),
+				tbn, tbnAlias: this.getTbnAlias(tbn),
 				tmodel,
 				repo,
 				rid: `${sequelize.getDatabaseName()}.${tbn}`,
@@ -130,10 +128,8 @@ export class DBService implements OnApplicationShutdown {
 		//Repo
 		if (typeof r === 'function') {
 			let data: any = {};
-			data.db = r.sequelize;
-			data.dbn = r.sequelize.getDatabaseName();
-			data.tbn = r.getTableName();
-			data.tbnAlias = this.getTbnAlias(data.tbn);
+			data.db = r.sequelize; data.dbn = r.sequelize.getDatabaseName();
+			data.tbn = r.getTableName(); data.tbnAlias = this.getTbnAlias(data.tbn);
 			data.tmodel = r;
 			data.repo = r;
 			data.rid = `${data.dbn}.${data.tbn}`;
@@ -155,7 +151,7 @@ export class DBService implements OnApplicationShutdown {
 		return ((await this.getRepoByOptions(r)) as any).$data;
 	}
 	//db
-	public async showTables(db: DB, tbnLike?: string): Promise<{ name: string }[]> {
+	public async dbShowTables(db: DB, tbnLike?: string): Promise<{ name: string }[]> {
 		let sequelize = typeof db === 'string' ? await this.getDBConnection(db) : db;
 		if (sequelize.getDialect() === 'sqlite') {
 			return sequelize.query(
@@ -165,8 +161,8 @@ export class DBService implements OnApplicationShutdown {
 		}
 		return [];
 	}
-	public async existsTable(db: DB, tbnLike: string) {
-		return (await this.showTables(db, tbnLike)).length > 0;
+	public async dbExistsTable(db: DB, tbnLike: string) {
+		return (await this.dbShowTables(db, tbnLike)).length > 0;
 	}
 	public async dbGetIn(
 		r: Repo | Model | RepoOptions | RepoData,
@@ -197,7 +193,7 @@ export class DBService implements OnApplicationShutdown {
 			} else {
 				let sequelize = await this.getDBConnection(db);
 				(r as RepoOptions).db = sequelize;
-				for (let t of await this.showTables(sequelize, tbnLike)) {
+				for (let t of await this.dbShowTables(sequelize, tbnLike)) {
 					(r as RepoOptions).tbn = t.name;
 					//
 					let tr = await this.getRepoByOptions(r as RepoOptions);
@@ -212,7 +208,7 @@ export class DBService implements OnApplicationShutdown {
 		}
 		return data;
 	}
-	public async dbGetPage(
+	public async dbGetByPages(
 		r: Repo | Model | RepoOptions | RepoData,
 		sqlOrFields: string | CacheDB.SqlOptions[],
 		page: number, pageSize: number, countField: string = 'id',
