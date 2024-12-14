@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/sequelize';
 import { CryptoUtils } from 'me-utils';
 import * as CacheDB from 'me-cache-db';
 import { ConfigService } from '@libs/config';
+import { DBService } from '@libs/db/db.service';
 import { PwdEncryptService, JwtEncryptService } from '@libs/encrypt';
 import { UserExceptions } from '../execptions';
 import { UserModel, UserCDB } from '../models/user';
@@ -10,12 +11,13 @@ import { UserModel, UserCDB } from '../models/user';
 @Injectable()
 export class UserService {
 	constructor(
+		private readonly dbService: DBService,
 		private readonly configService: ConfigService,
 		private readonly pwdService: PwdEncryptService,
 		private readonly jwtEncryptService: JwtEncryptService,
 		@InjectModel(UserModel, 'sys')
 		private userRepo: typeof UserModel
-	) {}
+	) { }
 
 	//const -------------------------------------------------------------------
 	//-------------------------------------------------------------------
@@ -24,7 +26,7 @@ export class UserService {
 
 	//Select -------------------------------------------------------------------
 	//-------------------------------------------------------------------
-	public fieldScheme = new CacheDB.FieldScheme({
+	public fieldScheme = new CacheDB.FieldScheme(this.dbService.getRepoAllFields(this.userRepo), {
 		[UserService.FieldSchemeAll]: `id,uuid,username,password,lastLoginAt`,
 		[UserService.FieldSchemeCommon]: `id,uuid,username,lastLoginAt`,
 	});
@@ -37,7 +39,7 @@ export class UserService {
 		raw: boolean = true
 	) {
 		let user = await this.userRepo.findOne({
-			attributes: this.fieldScheme.pickFields(selFields),
+			attributes: this.fieldScheme.getFields(selFields),
 			where: { [key]: value },
 			raw,
 		});
@@ -53,7 +55,7 @@ export class UserService {
 		let user = await CacheDB.sel(
 			undefined,
 			userData,
-			[{ ...UserCDB.ns.uuid(), ...fields }],
+			[{ ...UserCDB.ns.uuid(), fields }],
 			async () => this.userRepo.findOne({ where: { uuid }, raw: true }),
 			raw ? undefined : (data) => this.userRepo.build(data as any, { raw: true, isNewRecord: false })
 		);

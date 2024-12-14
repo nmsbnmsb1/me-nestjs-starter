@@ -67,7 +67,7 @@ export class DBService implements OnApplicationShutdown {
 		this.dynamicDBMap = {};
 	}
 
-	//获取一个数据库连接
+	//DB & Repo
 	public async getDBConnection(db: DB) {
 		if (typeof db !== 'string') return db;
 		//
@@ -150,7 +150,22 @@ export class DBService implements OnApplicationShutdown {
 		//RepoOptions
 		return ((await this.getRepoByOptions(r)) as any).$data;
 	}
-	//db
+	//Fields
+	//Fields
+	public getRepoAllFields(r: Repo) {
+		let keys: any;
+		try {
+			keys = r.getAttributes()
+		} catch (e) {
+			keys = {
+				id: 'id',
+				...Reflect.getMetadata('sequelize:attributes', r.prototype),
+				createdAt: '', updatedAt: '', deletedAt: ''
+			}
+		}
+		return Object.keys(keys);
+	}
+	//Sel & update & delete
 	public async dbShowTables(db: DB, tbnLike?: string): Promise<{ name: string }[]> {
 		let sequelize = typeof db === 'string' ? await this.getDBConnection(db) : db;
 		if (sequelize.getDialect() === 'sqlite') {
