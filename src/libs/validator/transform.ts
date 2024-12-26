@@ -7,9 +7,9 @@ export * from 'class-transformer';
 export function TransformToNumber(options: TransformOptions = {}): PropertyDecorator {
 	return Transform((v) => {
 		try {
-			return JSON.parse(`{"value":${v.value}}`).value
+			return JSON.parse(`{"value":${v.value}}`).value;
 		} catch (e) {
-			throw getValidationExecption(v.key, 'isNumberString')
+			throw getValidationExecption(v.key, 'isNumberString');
 		}
 	}, options);
 }
@@ -18,9 +18,9 @@ export function TransformToNumber(options: TransformOptions = {}): PropertyDecor
 export function TransformToNumberArray(options: TransformOptions = {}): PropertyDecorator {
 	return Transform((v) => {
 		try {
-			return JSON.parse(`[${v.value}]`)
+			return JSON.parse(`[${v.value}]`);
 		} catch (e) {
-			throw getValidationExecption(v.key, 'isNumberArray')
+			throw getValidationExecption(v.key, 'isNumberArray');
 		}
 	}, options);
 }
@@ -29,9 +29,9 @@ export function TransformToNumberArray(options: TransformOptions = {}): Property
 export function TransformToStringArray(options: TransformOptions = {}): PropertyDecorator {
 	return Transform((v) => {
 		try {
-			return JSON.parse(`["${v.value.split(',').join(`","`)}"]`)
+			return JSON.parse(`["${v.value.split(',').join(`","`)}"]`);
 		} catch (e) {
-			throw getValidationExecption(v.key, 'isStringArray')
+			throw getValidationExecption(v.key, 'isStringArray');
 		}
 	}, options);
 }
@@ -52,14 +52,14 @@ export function TransformToBooleanNumber(options: TransformOptions = {}): Proper
 //转换json对象
 export function TransformToJSONObject(options: TransformOptions = {}): PropertyDecorator {
 	return Transform((v) => {
-		let value = v.value
+		let value = v.value;
 		if (typeof value === 'object') return value;
 		//
 		try {
 			if (!value.startsWith('{')) value = `{${value}}`;
 			return JSON.parse(value);
 		} catch (e) {
-			throw getValidationExecption(v.key, 'isJSONString')
+			throw getValidationExecption(v.key, 'isJSONString');
 		}
 	}, options);
 }

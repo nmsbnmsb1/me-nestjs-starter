@@ -1,5 +1,6 @@
-import { Module, Global } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
+
 import { UserModel } from '@modules/user/models/user';
 import { JWTAuthGuard } from './guard';
 

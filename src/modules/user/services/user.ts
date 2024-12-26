@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { CryptoUtils } from 'me-utils';
 import * as CacheDB from 'me-cache-db';
+import { CryptoUtils } from 'me-utils';
+
 import { ConfigService } from '@libs/config';
 import { DBService } from '@libs/db/db.service';
-import { PwdEncryptService, JwtEncryptService } from '@libs/encrypt';
+import { JwtEncryptService, PwdEncryptService } from '@libs/encrypt';
 import { UserExceptions } from '../execptions';
-import { UserModel, UserCDB } from '../models/user';
+import { UserCDB, UserModel } from '../models/user';
 
 @Injectable()
 export class UserService {
@@ -17,7 +18,7 @@ export class UserService {
 		private readonly jwtEncryptService: JwtEncryptService,
 		@InjectModel(UserModel, 'sys')
 		private userRepo: typeof UserModel
-	) { }
+	) {}
 
 	//const -------------------------------------------------------------------
 	//-------------------------------------------------------------------
@@ -36,7 +37,7 @@ export class UserService {
 		value: any,
 		selFields: CacheDB.Fields,
 		checker: 'exists' | 'not_exists',
-		raw: boolean = true
+		raw = true
 	) {
 		let user = await this.userRepo.findOne({
 			attributes: this.fieldScheme.getFields(selFields),
@@ -45,11 +46,11 @@ export class UserService {
 		});
 		//checker
 		if (checker === 'exists' && !user) throw UserExceptions.user_not_exists;
-		else if (checker === 'not_exists' && user) throw UserExceptions.user_exists;
+		if (checker === 'not_exists' && user) throw UserExceptions.user_exists;
 		//
 		return user as any;
 	}
-	public async getByUUID(uuid: string, selFields: CacheDB.Fields, raw: boolean = true) {
+	public async getByUUID(uuid: string, selFields: CacheDB.Fields, raw = true) {
 		let fields = this.fieldScheme.getFields(selFields);
 		let userData = { uuid };
 		let user = await CacheDB.sel(

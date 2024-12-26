@@ -1,5 +1,6 @@
-import { merge } from 'lodash';
 import { ConfigModule as NestConfigModule } from '@nestjs/config';
+import { merge } from 'lodash';
+
 import baseConfig from '@config/config';
 
 //导出服务
@@ -13,7 +14,7 @@ export const ConfigModule = NestConfigModule.forRoot({
 			let envConfig = {};
 			try {
 				envConfig = require(`../../config/config.${process.env.NODE_ENV}`).default;
-			} catch (e) { }
+			} catch (e) {}
 			//
 			return merge(baseConfig, envConfig);
 		},

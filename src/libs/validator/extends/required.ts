@@ -13,7 +13,7 @@ export function requiredIf(value: any, object: any, otherPropertyName: string, v
 	//当值为空时
 	let otherValue = object[otherPropertyName];
 	let index = values.indexOf(otherValue);
-	return index >= 0 ? true : false;
+	return index >= 0;
 }
 export function RequiredIf(
 	otherPropertyName: string,
@@ -34,7 +34,7 @@ export function requiredIfNot(value: any, object: any, otherPropertyName: string
 	//当值为空时
 	let otherValue = object[otherPropertyName];
 	let index = values.indexOf(otherValue);
-	return index < 0 ? true : false;
+	return index < 0;
 }
 export function RequiredIfNot(
 	otherPropertyName: string,

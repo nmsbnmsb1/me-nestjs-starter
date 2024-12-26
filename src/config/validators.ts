@@ -1,7 +1,7 @@
 const Pre = {
 	Length_2_3: () => ({ args: [2, 32], options: { message: '#length_2_32' } }),
-	Min_0: () => ({ args: [0], options: { message: '#min_0' } })
-}
+	Min_0: () => ({ args: [0], options: { message: '#min_0' } }),
+};
 
 function requiredWrap(v: any) {
 	return (required: any = false) => {
@@ -19,7 +19,7 @@ function requiredWrap(v: any) {
 export const DtoRules = {
 	//base
 	string: requiredWrap({}),
-	strings: requiredWrap({ TransformToStringArray: true, IsArray: true, }),
+	strings: requiredWrap({ TransformToStringArray: true, IsArray: true }),
 	int: requiredWrap({ TransformToNumber: true, IsInt: true }),
 	ints: requiredWrap({
 		TransformToNumberArray: true,

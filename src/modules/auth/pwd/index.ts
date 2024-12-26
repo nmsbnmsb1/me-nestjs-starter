@@ -1,5 +1,6 @@
-import { Module, Global } from '@nestjs/common';
 import { UserModule } from '@modules/user';
+import { Global, Module } from '@nestjs/common';
+
 import { PwdAuthController } from './controllers';
 
 @Global()
@@ -9,4 +10,4 @@ import { PwdAuthController } from './controllers';
 	providers: [],
 	exports: [],
 })
-export class PwdAuthModule { }
+export class PwdAuthModule {}

@@ -1,5 +1,6 @@
+import { Global, Module, ValidationPipe } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
-import { ValidationPipe, Global, Module } from '@nestjs/common';
+
 import { isDevelopment } from '@libs/utils';
 import { getValidationExecption } from './utils';
 
@@ -31,24 +32,24 @@ export * as Validators from './extends';
 					stopAtFirstError: !isDevelopment,
 					transform: true,
 					exceptionFactory: (errors) => {
-						let descriptions = []
+						let descriptions = [];
 						for (let e of errors) {
 							if (e.constraints) {
 								for (let key in e.constraints) {
-									let message = e.constraints[key]
+									let message = e.constraints[key];
 									if (message.startsWith('#')) {
-										descriptions.push({ fieldName: e.property, message: message.substring(1) })
+										descriptions.push({ fieldName: e.property, message: message.substring(1) });
 									} else {
-										descriptions.push({ fieldName: e.property, message: key })
+										descriptions.push({ fieldName: e.property, message: key });
 									}
 								}
 							}
 						}
 						//
-						return getValidationExecption(descriptions)
-					}
+						return getValidationExecption(descriptions);
+					},
 				}),
 		},
 	],
 })
-export class ValidatorModule { }
+export class ValidatorModule {}

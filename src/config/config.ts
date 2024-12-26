@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 import { JSONCache } from 'me-cache-db/lib/cache/json';
 
 export default {

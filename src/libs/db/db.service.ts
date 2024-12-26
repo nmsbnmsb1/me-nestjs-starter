@@ -1,18 +1,29 @@
-import path from 'path';
+import path from 'node:path';
+
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { UnknownElementException } from '@nestjs/core/errors/exceptions/unknown-element.exception';
 import { getConnectionToken } from '@nestjs/sequelize';
 import { SequelizeCoreModule } from '@nestjs/sequelize/dist/sequelize-core.module';
-import { Sequelize, QueryTypes, Model, Order, Op } from 'sequelize';
-import { ModelCtor, getAttributes } from 'sequelize-typescript';
 import * as CacheDB from 'me-cache-db';
+import { Model, Op, Order, QueryTypes, Sequelize } from 'sequelize';
+import { ModelCtor, getAttributes } from 'sequelize-typescript';
+
 import { ConfigService } from '@libs/config';
 
 export type DB = string | Sequelize;
 export type Repo = ModelCtor;
-export interface RepoOptions { db: DB; tbn: string; tmodel: ModelCtor };
-export interface RepoOptionsTbnLike { db: DB; tbn?: string; tbnLike?: string; tmodel: ModelCtor };
+export interface RepoOptions {
+	db: DB;
+	tbn: string;
+	tmodel: ModelCtor;
+}
+export interface RepoOptionsTbnLike {
+	db: DB;
+	tbn?: string;
+	tbnLike?: string;
+	tmodel: ModelCtor;
+}
 export interface RepoData {
 	db: Sequelize;
 	dbn: string;
@@ -21,7 +32,7 @@ export interface RepoData {
 	tmodel: ModelCtor;
 	repo: Repo;
 	rid: string;
-};
+}
 
 export function getSequelizeConfig(name: string, thisConfig: any, dbConfig: any) {
 	let baseConfig = dbConfig[`base_${thisConfig.dialect}`];
@@ -57,7 +68,7 @@ export class DBService implements OnApplicationShutdown {
 	constructor(
 		private moduleRef: ModuleRef,
 		private configService: ConfigService
-	) { }
+	) {}
 
 	//销毁sequelize实例
 	async onApplicationShutdown() {
@@ -113,8 +124,10 @@ export class DBService implements OnApplicationShutdown {
 		let repo: any = sequelize.models[tbn];
 		if (!repo.$data)
 			repo.$data = {
-				db: sequelize, dbn: sequelize.getDatabaseName(),
-				tbn, tbnAlias: this.getTbnAlias(tbn),
+				db: sequelize,
+				dbn: sequelize.getDatabaseName(),
+				tbn,
+				tbnAlias: this.getTbnAlias(tbn),
 				tmodel,
 				repo,
 				rid: `${sequelize.getDatabaseName()}.${tbn}`,
@@ -124,12 +137,14 @@ export class DBService implements OnApplicationShutdown {
 	public async getRepoData(r: Repo | Model | RepoOptions | RepoData): Promise<RepoData> {
 		if ((r as any).$data) return (r as any).$data;
 		//RepoData
-		if ((r as RepoData).db && (r as RepoData).repo && (r as RepoData).rid) return r as RepoData
+		if ((r as RepoData).db && (r as RepoData).repo && (r as RepoData).rid) return r as RepoData;
 		//Repo
 		if (typeof r === 'function') {
 			let data: any = {};
-			data.db = r.sequelize; data.dbn = r.sequelize.getDatabaseName();
-			data.tbn = r.getTableName(); data.tbnAlias = this.getTbnAlias(data.tbn);
+			data.db = r.sequelize;
+			data.dbn = r.sequelize.getDatabaseName();
+			data.tbn = r.getTableName();
+			data.tbnAlias = this.getTbnAlias(data.tbn);
 			data.tmodel = r;
 			data.repo = r;
 			data.rid = `${data.dbn}.${data.tbn}`;
@@ -155,13 +170,15 @@ export class DBService implements OnApplicationShutdown {
 	public getRepoAllFields(r: Repo) {
 		let keys: any;
 		try {
-			keys = r.getAttributes()
+			keys = r.getAttributes();
 		} catch (e) {
 			keys = {
 				id: 'id',
 				...Reflect.getMetadata('sequelize:attributes', r.prototype),
-				createdAt: '', updatedAt: '', deletedAt: ''
-			}
+				createdAt: '',
+				updatedAt: '',
+				deletedAt: '',
+			};
 		}
 		return Object.keys(keys);
 	}
@@ -185,7 +202,7 @@ export class DBService implements OnApplicationShutdown {
 		values: any[],
 		selFields: string | string[],
 		order: Order = [['id', 'ASC']],
-		raw: boolean = true
+		raw = true
 	) {
 		let { repo } = await this.getRepoData(r);
 		let attributes = !Array.isArray(selFields) ? selFields.split(',') : selFields;
@@ -226,8 +243,10 @@ export class DBService implements OnApplicationShutdown {
 	public async dbGetByPages(
 		r: Repo | Model | RepoOptions | RepoData,
 		sqlOrFields: string | CacheDB.SqlOptions[],
-		page: number, pageSize: number, countField: string = 'id',
-		raw: boolean = true
+		page: number,
+		pageSize: number,
+		countField = 'id',
+		raw = true
 	) {
 		let { db, repo } = await this.getRepoData(r);
 		let sql: string;
@@ -238,7 +257,7 @@ export class DBService implements OnApplicationShutdown {
 		let pageData = await CacheDB.doPage(page, pageSize, countField, sql, query);
 		if (!raw && pageData.datas?.length) {
 			for (let i = 0; i < pageData.datas.length; i++) {
-				pageData.datas[i] = repo.build(pageData.datas[i], { raw: true, isNewRecord: false })
+				pageData.datas[i] = repo.build(pageData.datas[i], { raw: true, isNewRecord: false });
 			}
 		}
 		return pageData;

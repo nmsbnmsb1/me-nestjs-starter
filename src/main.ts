@@ -1,19 +1,23 @@
-import path from 'path';
-import fs from 'fs';
-import { NestFactory } from '@nestjs/core';
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { Module } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule as NestSwaggerModule } from '@nestjs/swagger';
+
 //系统子模块
+import { ClsModule } from '@libs/cls';
 import { ConfigModule, ConfigService } from '@libs/config';
-import { ClsModule } from "@libs/cls"
 import { DBModule } from '@libs/db';
 import { EncryptModule } from '@libs/encrypt';
 import { ExceptionModule } from '@libs/exception';
 import { ValidatorModule } from '@libs/validator';
+
 //业务模块
-import { PwdAuthModule } from '@modules/auth/pwd';
 import { JWTAuthModule } from '@modules/auth/jwt';
+import { PwdAuthModule } from '@modules/auth/pwd';
 import { UserModule } from '@modules/user';
+
 //
 import * as CacheDB from 'me-cache-db';
 
@@ -32,7 +36,7 @@ import * as CacheDB from 'me-cache-db';
 		UserModule,
 	],
 })
-export class AppModule { }
+export class AppModule {}
 
 //bootstrap
 (async () => {

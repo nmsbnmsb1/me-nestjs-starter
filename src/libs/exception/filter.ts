@@ -1,12 +1,12 @@
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { HttpException, ExceptionFilter, Catch, ArgumentsHost, Logger, HttpStatus } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
+
 import { AppClsStore } from '@libs/cls';
 import { isDevelopment } from '@libs/utils';
-
-import { ClsService } from 'nestjs-cls';
 import { Exception } from './define';
 
-const internal_server_error = 'INTERNAL_SERVER_ERROR'.toLowerCase()
+const internal_server_error = 'INTERNAL_SERVER_ERROR'.toLowerCase();
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
@@ -14,12 +14,9 @@ export class AppExceptionFilter implements ExceptionFilter {
 
 	constructor(
 		private readonly clsService: ClsService<AppClsStore> // 通过构造函数注入
-	) { }
+	) {}
 
-	catch(
-		e: Exception | Omit<Exception, '__reg' | '__m'> | HttpException | Error,
-		host: ArgumentsHost
-	) {
+	catch(e: Exception | Omit<Exception, '__reg' | '__m'> | HttpException | Error, host: ArgumentsHost) {
 		let ctx = host.switchToHttp();
 		let request = ctx.getRequest<Request>();
 		let response = ctx.getResponse<Response>();
@@ -32,15 +29,15 @@ export class AppExceptionFilter implements ExceptionFilter {
 		//
 		//console.log('msg', exception);
 		if ((e as Exception).__reg) {
-			let ee = e as Exception
+			let ee = e as Exception;
 			http_status = ee.http_status || HttpStatus.INTERNAL_SERVER_ERROR;
 			if (isDevelopment || !ee.pro_id) {
-				id = ee.id
-				description = ee.description
+				id = ee.id;
+				description = ee.description;
 				this.logger.error(`${path}: ${http_status} - ${id} ${description || ''}`);
 			} else {
-				id = ee.pro_id
-				description = ee.__m[ee.pro_id]?.description || ee.description
+				id = ee.pro_id;
+				description = ee.__m[ee.pro_id]?.description || ee.description;
 				this.logger.error(`${path}: ${http_status} - ${ee.pro_id}(${ee.id}) ${description || ''}`);
 			}
 		} else if (e instanceof HttpException) {
@@ -53,12 +50,12 @@ export class AppExceptionFilter implements ExceptionFilter {
 			} else if (resp.__reg || resp.id) {
 				let ee = resp as Exception;
 				if (isDevelopment || !ee.pro_id) {
-					id = ee.id
-					description = ee.description
+					id = ee.id;
+					description = ee.description;
 					this.logger.error(`${path}: ${http_status} - ${id} ${description || ''}`);
 				} else {
-					id = ee.pro_id
-					description = ee.__m?.[ee.pro_id]?.description || ee.description
+					id = ee.pro_id;
+					description = ee.__m?.[ee.pro_id]?.description || ee.description;
 					this.logger.error(`${path}: ${http_status} - ${ee.pro_id}(${ee.id}) ${description || ''}`);
 				}
 			} else {
@@ -69,13 +66,13 @@ export class AppExceptionFilter implements ExceptionFilter {
 		} else if (e instanceof Error) {
 			http_status = HttpStatus.INTERNAL_SERVER_ERROR;
 			id = internal_server_error;
-			if (isDevelopment) description = { message: e.message, stack: e.stack }
+			if (isDevelopment) description = { message: e.message, stack: e.stack };
 			this.logger.error(`${path}: ${http_status} - ${id} ${e.message}\n${e.stack}}`);
 		} else {
-			let ee = e as any
+			let ee = e as any;
 			http_status = ee.http_status || HttpStatus.INTERNAL_SERVER_ERROR;
 			id = ee.id || internal_server_error;
-			description = ee.description
+			description = ee.description;
 			this.logger.error(`${path}: ${http_status} - ${id} ${ee.description || ''}}`);
 		}
 		//

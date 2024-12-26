@@ -1,6 +1,7 @@
 import { DynamicModule } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
+
 import baseConfig from '@config/config';
 import { DBService, getSequelizeConfig } from './db.service';
 

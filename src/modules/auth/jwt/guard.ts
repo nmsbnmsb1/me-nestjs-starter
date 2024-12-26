@@ -1,6 +1,7 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import * as CacheDB from 'me-cache-db';
+
 import { ConfigService } from '@libs/config';
 import { JwtEncryptService } from '@libs/encrypt';
 import { UserCDB, UserModel } from '@modules/user/models/user';
@@ -36,7 +37,9 @@ export class JWTAuthGuard implements CanActivate {
 			this.configService.get(`user.cacheExpireMS`)
 		);
 		//保存数据
+		//biome-ignore lint/performance/noDelete:
 		delete userData.$jwt;
+		//biome-ignore lint/performance/noDelete:
 		delete userData.$expireAt;
 		req.userData = userData;
 		req.user = this.userRepo.build(userData as any, { raw: true, isNewRecord: false });

@@ -1,5 +1,5 @@
-import * as Transform from './transform';
 import * as ClassValidator from './extends';
+import * as Transform from './transform';
 
 //规则定义
 export type RuleArgs = any[];
@@ -10,9 +10,9 @@ export interface RuleOptions {
 	// validate?: (value: any, args?: ClassValidator.ValidationArguments) => boolean;
 	// message?: string | ((eachPrefix: string, args?: ClassValidator.ValidationArguments) => string);
 	// defaultMessage?: string | ((args?: ClassValidator.ValidationArguments) => string);
-};
+}
 //规则集
-export type Rules = { name: string;[name: string]: any | RuleArgs | RuleOptions };
+export type Rules = { name: string; [name: string]: any | RuleArgs | RuleOptions };
 export function ValidateRules(
 	rules: Rules,
 	transformOptions?: Transform.TransformOptions,
@@ -23,8 +23,8 @@ export function ValidateRules(
 		for (const name in rules) {
 			if (name === 'name') continue;
 			//
-			let isTransform;
-			let decorator;
+			let isTransform: boolean;
+			let decorator: any;
 			if (name.startsWith('Transform')) {
 				isTransform = true;
 				decorator = (Transform as any)[name];
