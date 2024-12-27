@@ -166,19 +166,22 @@ export class DBService implements OnApplicationShutdown {
 		return ((await this.getRepoByOptions(r)) as any).$data;
 	}
 	//Fields
-	//Fields
-	public getRepoAllFields(r: Repo) {
+	public getRepoAllFields(r: Repo, customFieldsOnly = false) {
 		let keys: any;
-		try {
-			keys = r.getAttributes();
-		} catch (e) {
-			keys = {
-				id: 'id',
-				...Reflect.getMetadata('sequelize:attributes', r.prototype),
-				createdAt: '',
-				updatedAt: '',
-				deletedAt: '',
-			};
+		if (customFieldsOnly) {
+			keys = { ...Reflect.getMetadata('sequelize:attributes', r.prototype) };
+		} else {
+			try {
+				keys = r.getAttributes();
+			} catch (e) {
+				keys = {
+					id: 'id',
+					...Reflect.getMetadata('sequelize:attributes', r.prototype),
+					createdAt: '',
+					updatedAt: '',
+					deletedAt: '',
+				};
+			}
 		}
 		return Object.keys(keys);
 	}

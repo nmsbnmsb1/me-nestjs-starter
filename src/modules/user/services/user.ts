@@ -22,15 +22,15 @@ export class UserService {
 
 	//const -------------------------------------------------------------------
 	//-------------------------------------------------------------------
-	public static FieldSchemeAll = `All`;
-	public static FieldSchemeCommon = `Common`;
-
-	//Select -------------------------------------------------------------------
-	//-------------------------------------------------------------------
+	public static FieldSchemeAll = `UserService.FieldScheme.All`;
+	public static FieldSchemeCommon = `UserService.FieldScheme.Common`;
 	public fieldScheme = new CacheDB.FieldScheme(this.dbService.getRepoAllFields(this.userRepo), {
 		[UserService.FieldSchemeAll]: `id,uuid,username,password,lastLoginAt`,
 		[UserService.FieldSchemeCommon]: `id,uuid,username,lastLoginAt`,
 	});
+
+	//select -------------------------------------------------------------------
+	//-------------------------------------------------------------------
 	//根据主键获取用户对象
 	public async dbGetOne(
 		key: 'id' | 'uuid' | 'username',
