@@ -6,7 +6,7 @@ import { UnknownElementException } from '@nestjs/core/errors/exceptions/unknown-
 import { getConnectionToken } from '@nestjs/sequelize';
 import { SequelizeCoreModule } from '@nestjs/sequelize/dist/sequelize-core.module';
 import * as CacheDB from 'me-cache-db';
-import { Model, Op, Order, QueryTypes, Sequelize } from 'sequelize';
+import { Model, Order, QueryTypes, Sequelize, WhereOptions } from 'sequelize';
 import { ModelCtor, getAttributes } from 'sequelize-typescript';
 
 import { ConfigService } from '@libs/config';
@@ -18,10 +18,10 @@ export interface RepoOptions {
 	tbn: string;
 	tmodel: ModelCtor;
 }
-export interface RepoOptionsTbnLike {
+export interface RepoOptionsTbnWhere {
 	db: DB;
 	tbn?: string;
-	tbnLike?: string;
+	tbnWhere?: CacheDB.SqlStatement | { name: CacheDB.Where };
 	tmodel: ModelCtor;
 }
 export interface RepoData {
@@ -117,7 +117,11 @@ export class DBService implements OnApplicationShutdown {
 		let sequelize = typeof db === 'string' ? await this.getDBConnection(db) : db;
 		if (!sequelize.isDefined(tbn)) {
 			await sequelize
-				.define(tbn, getAttributes(tmodel.prototype || tmodel), { tableName: tbn, timestamps: true, paranoid: true })
+				.define(tbn, getAttributes(tmodel.prototype || tmodel), {
+					tableName: tbn,
+					timestamps: true,
+					paranoid: true,
+				})
 				.sync();
 		}
 		//
@@ -165,7 +169,6 @@ export class DBService implements OnApplicationShutdown {
 		//RepoOptions
 		return ((await this.getRepoByOptions(r)) as any).$data;
 	}
-	//Fields
 	public getRepoAllFields(r: Repo, customFieldsOnly = false) {
 		let keys: any;
 		if (customFieldsOnly) {
@@ -185,34 +188,40 @@ export class DBService implements OnApplicationShutdown {
 		}
 		return Object.keys(keys);
 	}
-	//Sel & update & delete
-	public async dbShowTables(db: DB, tbnLike?: string): Promise<{ name: string }[]> {
+	//Sql通用方法
+	public async dbGetTables(
+		db: DB,
+		tbnWhere?: CacheDB.SqlStatement | { name: CacheDB.Where }
+	): Promise<{ name: string }[]> {
 		let sequelize = typeof db === 'string' ? await this.getDBConnection(db) : db;
+		//解析where sql
+		let whereSql = '';
+		if (tbnWhere) whereSql = typeof tbnWhere === 'string' ? tbnWhere : typeof tbnWhere === 'function' ? tbnWhere() : '';
+		//各种数据库获取表的方法不同
 		if (sequelize.getDialect() === 'sqlite') {
+			if (!whereSql && tbnWhere) whereSql = CacheDB.getFieldWhereSql('name', (tbnWhere as any).name);
 			return sequelize.query(
-				`SELECT name FROM sqlite_master WHERE type='table' ${!tbnLike ? '' : `and name like '${tbnLike}'`};`,
-				{ type: QueryTypes.SELECT }
+				`SELECT name FROM sqlite_master WHERE type='table' ${!whereSql ? '' : `and ${whereSql}`};`,
+				{
+					type: QueryTypes.SELECT,
+				}
+			);
+		}
+		if (sequelize.getDialect() === 'mysql') {
+			if (!whereSql && tbnWhere) whereSql = CacheDB.getFieldWhereSql('TABLE_NAME', (tbnWhere as any).name);
+			return sequelize.query(
+				`SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${sequelize.getDatabaseName()}' ${!whereSql ? '' : `AND ${whereSql}`};`,
+				{
+					type: QueryTypes.SELECT,
+				}
 			);
 		}
 		return [];
 	}
-	public async dbExistsTable(db: DB, tbnLike: string) {
-		return (await this.dbShowTables(db, tbnLike)).length > 0;
+	public async dbExistsTable(db: DB, tbn: string) {
+		return (await this.dbGetTables(db, { name: ['=', tbn] })).length > 0;
 	}
-	public async dbGetIn(
-		r: Repo | Model | RepoOptions | RepoData,
-		field: string,
-		values: any[],
-		selFields: string | string[],
-		order: Order = [['id', 'ASC']],
-		raw = true
-	) {
-		let { repo } = await this.getRepoData(r);
-		let attributes = !Array.isArray(selFields) ? selFields.split(',') : selFields;
-		let where = { [field]: { [Op.in]: values } };
-		return repo.findAll({ attributes, where, order, raw });
-	}
-	public async dbGetInTables(r: Repo | RepoOptionsTbnLike, query: (repo: Repo) => Promise<any>) {
+	public async dbGetInTables(r: Repo | RepoOptionsTbnWhere, query: (repo: Repo) => Promise<any>) {
 		let repo: Repo;
 		let data: any;
 		//
@@ -221,14 +230,14 @@ export class DBService implements OnApplicationShutdown {
 			data = await query(repo);
 		} else {
 			//遍历所有的表
-			let { db, tbn, tbnLike } = r as RepoOptionsTbnLike;
+			let { db, tbn, tbnWhere } = r as RepoOptionsTbnWhere;
 			if (tbn) {
 				repo = await this.getRepoByOptions(r as RepoOptions);
 				data = await query(repo);
 			} else {
 				let sequelize = await this.getDBConnection(db);
 				(r as RepoOptions).db = sequelize;
-				for (let t of await this.dbShowTables(sequelize, tbnLike)) {
+				for (let t of await this.dbGetTables(sequelize, tbnWhere)) {
 					(r as RepoOptions).tbn = t.name;
 					//
 					let tr = await this.getRepoByOptions(r as RepoOptions);
@@ -265,7 +274,22 @@ export class DBService implements OnApplicationShutdown {
 		}
 		return pageData;
 	}
-	public async dbBulkCreate(
+	//Sequelize封装方法
+	public async seqGetIn(
+		r: Repo | Model | RepoOptions | RepoData,
+		selFields: string | string[],
+		field: string,
+		ins: any[],
+		additionalWhere?: WhereOptions<any>,
+		order: Order = [['id', 'ASC']],
+		raw = true
+	) {
+		let { repo } = await this.getRepoData(r);
+		let attributes = !Array.isArray(selFields) ? selFields.split(',') : selFields;
+		let where = { [field]: ins, ...additionalWhere };
+		return repo.findAll({ attributes, where, order, raw });
+	}
+	public async seqBulkCreate(
 		r: Repo | Model | RepoOptions | RepoData,
 		data: any | any[],
 		updateFields?: BulkCreatUpdateFields,
@@ -301,8 +325,15 @@ export class DBService implements OnApplicationShutdown {
 		});
 		return !Array.isArray(data) ? dbData[0] : dbData;
 	}
-	public async dbDelete(r: Repo | Model | RepoOptions | RepoData, field: string, values: any[], force = false) {
+	public async seqDelete(
+		r: Repo | Model | RepoOptions | RepoData,
+		field: string,
+		ins: any[],
+		additionalWhere?: WhereOptions<any>,
+		force = false
+		//
+	) {
 		let { repo } = await this.getRepoData(r);
-		return repo.destroy({ where: { [field]: values }, force });
+		return repo.destroy({ where: { [field]: ins, ...additionalWhere }, force });
 	}
 }
