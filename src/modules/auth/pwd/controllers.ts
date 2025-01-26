@@ -13,7 +13,7 @@ export class PwdAuthController {
 	//@UseGuards(PwdRegisterGuard)
 	async registerByUsername(@Body() registerDto: RegisterDTO) {
 		//检查用户是否已存在
-		await this.userService.dbGetOne('username', registerDto.username, 'id', 'not_exists');
+		await this.userService.getOne('username', registerDto.username, 'id', 'not_exists');
 		//执行注册
 		let user = await this.userService.register(registerDto);
 		//返回注册信息
@@ -26,13 +26,7 @@ export class PwdAuthController {
 		let user: any;
 		try {
 			//检查用户是否已存在
-			user = await this.userService.dbGetOne(
-				'username',
-				loginDto.username,
-				UserService.FieldSchemeAll,
-				'exists',
-				false
-			);
+			user = await this.userService.getOne('username', loginDto.username, UserService.FieldSchemeAll, 'exists', false);
 			//检查密码是否相符
 			await this.userService.checkPassword(loginDto.password, user);
 		} catch (e) {

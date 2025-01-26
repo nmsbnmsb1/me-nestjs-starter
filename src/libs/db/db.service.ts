@@ -12,6 +12,12 @@ import { ModelCtor, getAttributes } from 'sequelize-typescript';
 import { ConfigService } from '@libs/config';
 
 export type DB = string | Sequelize;
+export interface BaseAttributes {
+	id?: any;
+	createdAt?: any;
+	updatedAt?: any;
+	deletedAt?: any;
+}
 export type Repo = ModelCtor;
 export interface RepoOptions {
 	db: DB;
@@ -106,14 +112,18 @@ export class DBService implements OnApplicationShutdown {
 		}
 		return this.dynamicDBMap[db];
 	}
+	//
 	public getTbnAlias(tbn: string) {
-		let index = tbn.indexOf(':');
+		let index = tbn.indexOf('.');
 		return index < 0 ? tbn : tbn.substring(index + 1);
 	}
-	public isRepo(r: Repo | Partial<RepoOptions>) {
+	public isRepo(r: any) {
 		return typeof r === 'function';
 	}
-	public async getRepoByOptions({ db, tbn, tmodel }: RepoOptions) {
+	public isRepoData(r: any) {
+		return typeof r === 'object' && r.db && r.repo && r.rid;
+	}
+	private async getRepoByOptions({ db, tbn, tmodel }: RepoOptions) {
 		let sequelize = typeof db === 'string' ? await this.getDBConnection(db) : db;
 		if (!sequelize.isDefined(tbn)) {
 			await sequelize
@@ -138,10 +148,10 @@ export class DBService implements OnApplicationShutdown {
 			};
 		return repo as Repo;
 	}
-	public async getRepoData(r: Repo | Model | RepoOptions | RepoData): Promise<RepoData> {
-		if ((r as any).$data) return (r as any).$data;
+	public async getRepoData(r: Repo | Model | RepoOptions | RepoData | any): Promise<RepoData> {
+		if (r.$data) return r.$data;
 		//RepoData
-		if ((r as RepoData).db && (r as RepoData).repo && (r as RepoData).rid) return r as RepoData;
+		if (this.isRepoData(r)) return r as RepoData;
 		//Repo
 		if (typeof r === 'function') {
 			let data: any = {};
@@ -152,7 +162,7 @@ export class DBService implements OnApplicationShutdown {
 			data.tmodel = r;
 			data.repo = r;
 			data.rid = `${data.dbn}.${data.tbn}`;
-			return ((r as any).$data = data);
+			return (r.$data = data);
 		}
 		//Model
 		if (r instanceof Model) {
@@ -278,15 +288,15 @@ export class DBService implements OnApplicationShutdown {
 	public async seqGetIn(
 		r: Repo | Model | RepoOptions | RepoData,
 		selFields: string | string[],
-		field: string,
-		ins: any[],
+		inField: string,
+		inValues: any[],
 		additionalWhere?: WhereOptions<any>,
 		order: Order = [['id', 'ASC']],
 		raw = true
 	) {
 		let { repo } = await this.getRepoData(r);
 		let attributes = !Array.isArray(selFields) ? selFields.split(',') : selFields;
-		let where = { [field]: ins, ...additionalWhere };
+		let where = { [inField]: inValues, ...additionalWhere };
 		return repo.findAll({ attributes, where, order, raw });
 	}
 	public async seqBulkCreate(
@@ -327,13 +337,13 @@ export class DBService implements OnApplicationShutdown {
 	}
 	public async seqDelete(
 		r: Repo | Model | RepoOptions | RepoData,
-		field: string,
-		ins: any[],
+		inField: string,
+		inValues: any[],
 		additionalWhere?: WhereOptions<any>,
 		force = false
 		//
 	) {
 		let { repo } = await this.getRepoData(r);
-		return repo.destroy({ where: { [field]: ins, ...additionalWhere }, force });
+		return repo.destroy({ where: { [inField]: inValues, ...additionalWhere }, force });
 	}
 }

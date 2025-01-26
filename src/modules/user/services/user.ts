@@ -32,7 +32,7 @@ export class UserService {
 	//select -------------------------------------------------------------------
 	//-------------------------------------------------------------------
 	//根据主键获取用户对象
-	public async dbGetOne(
+	public async getOne(
 		key: 'id' | 'uuid' | 'username',
 		value: any,
 		selFields: CacheDB.Fields,

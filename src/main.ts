@@ -4,6 +4,7 @@ import path from 'node:path';
 import { Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule as NestSwaggerModule } from '@nestjs/swagger';
+import * as CacheDB from 'me-cache-db';
 
 //系统子模块
 import { ClsModule } from '@libs/cls';
@@ -17,9 +18,6 @@ import { ValidatorModule } from '@libs/validator';
 import { JWTAuthModule } from '@modules/auth/jwt';
 import { PwdAuthModule } from '@modules/auth/pwd';
 import { UserModule } from '@modules/user';
-
-//
-import * as CacheDB from 'me-cache-db';
 
 @Module({
 	imports: [
