@@ -285,7 +285,7 @@ export class DBService implements OnApplicationShutdown {
 		return pageData;
 	}
 	//Sequelize封装方法
-	public async seqGetIn(
+	public async seqGetIn<T = any>(
 		r: Repo | Model | RepoOptions | RepoData,
 		selFields: string | string[],
 		inField: string,
@@ -293,11 +293,11 @@ export class DBService implements OnApplicationShutdown {
 		additionalWhere?: WhereOptions<any>,
 		order: Order = [['id', 'ASC']],
 		raw = true
-	) {
+	): Promise<T[]> {
 		let { repo } = await this.getRepoData(r);
 		let attributes = !Array.isArray(selFields) ? selFields.split(',') : selFields;
 		let where = { [inField]: inValues, ...additionalWhere };
-		return repo.findAll({ attributes, where, order, raw });
+		return repo.findAll({ attributes, where, order, raw }) as any;
 	}
 	public async seqBulkCreate(
 		r: Repo | Model | RepoOptions | RepoData,

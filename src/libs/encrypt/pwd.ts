@@ -14,6 +14,6 @@ export class PwdEncryptService {
 
 	//验证
 	async verify(password: string, hashedPassword: string) {
-		return bcrypt.compare(password, hashedPassword) as boolean;
+		return bcrypt.compare(password, hashedPassword);
 	}
 }
