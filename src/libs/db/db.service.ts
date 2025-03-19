@@ -5,11 +5,14 @@ import { ModuleRef } from '@nestjs/core';
 import { UnknownElementException } from '@nestjs/core/errors/exceptions/unknown-element.exception';
 import { getConnectionToken } from '@nestjs/sequelize';
 import { SequelizeCoreModule } from '@nestjs/sequelize/dist/sequelize-core.module';
+import colors from 'colors';
 import * as CacheDB from 'me-cache-db';
 import { Model, Order, QueryTypes, Sequelize, WhereOptions } from 'sequelize';
 import { ModelCtor, getAttributes } from 'sequelize-typescript';
+import winston from 'winston';
 
 import { ConfigService } from '@libs/config';
+import { env } from '@libs/utils';
 
 export type DB = string | Sequelize;
 export interface BaseAttributes {
@@ -40,6 +43,25 @@ export interface RepoData {
 	rid: string;
 }
 
+const sqlLoggerLevel = {
+	production: { level: 'info', types: ['SELECT'] },
+	staging: { level: 'verbose', types: ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'BULKDELETE', 'BULKUPDATE'] },
+	default: { level: 'debug', types: undefined },
+};
+export const SqlLogger = winston.createLogger({
+	level: sqlLoggerLevel[env] ? sqlLoggerLevel[env].level : sqlLoggerLevel.default.level,
+	transports: [new winston.transports.Console()],
+	format: winston.format.combine(
+		winston.format.timestamp({ format: 'MM/DD/YYYY HH:mm:ss' }),
+		winston.format.ms(),
+		winston.format.printf((info: any) => {
+			let { timestamp, ms, message, meta } = info;
+			let type = `${meta?.type || 'UNKNOWN'}`.padStart(11, ' ');
+			return `${colors.blue(`[Sequelize]`)} ${timestamp} ${colors.blue(`${type}`)} ${colors.blue.dim(message)} ${colors.yellow(ms)}`;
+		})
+	),
+});
+
 export function getSequelizeConfig(name: string, thisConfig: any, dbConfig: any) {
 	let baseConfig = dbConfig[`base_${thisConfig.dialect}`];
 	let sequelizeConfig = {
@@ -47,6 +69,14 @@ export function getSequelizeConfig(name: string, thisConfig: any, dbConfig: any)
 		autoLoadModels: true,
 		synchronize: true,
 		repositoryMode: true,
+		logging: (msg, options) => {
+			let loggerConfig = sqlLoggerLevel[env] || sqlLoggerLevel.default;
+			if (!loggerConfig.types || loggerConfig.types.includes(options.type)) {
+				SqlLogger[loggerConfig.level](msg, { meta: options });
+			} else {
+				SqlLogger.debug(msg, { meta: options });
+			}
+		},
 		//通用基础配置
 		...baseConfig,
 		//单独配置
@@ -123,7 +153,8 @@ export class DBService implements OnApplicationShutdown {
 	public isRepoData(r: any) {
 		return typeof r === 'object' && r.db && r.repo && r.rid;
 	}
-	private async getRepoByOptions({ db, tbn, tmodel }: RepoOptions) {
+	private async getRepoByOptions(options: RepoOptions) {
+		let { db, tbn, tmodel } = options;
 		let sequelize = typeof db === 'string' ? await this.getDBConnection(db) : db;
 		if (!sequelize.isDefined(tbn)) {
 			await sequelize
@@ -146,6 +177,7 @@ export class DBService implements OnApplicationShutdown {
 				repo,
 				rid: `${sequelize.getDatabaseName()}.${tbn}`,
 			};
+		(options as any).$data = repo.$data;
 		return repo as Repo;
 	}
 	public async getRepoData(r: Repo | Model | RepoOptions | RepoData | any): Promise<RepoData> {
@@ -179,7 +211,7 @@ export class DBService implements OnApplicationShutdown {
 		//RepoOptions
 		return ((await this.getRepoByOptions(r)) as any).$data;
 	}
-	public getRepoAllFields(r: Repo, customFieldsOnly = false) {
+	public getRepoAllFields(r: Repo, customFieldsOnly?: boolean, options?: { id?: boolean; date?: boolean }) {
 		let keys: any;
 		if (customFieldsOnly) {
 			keys = { ...Reflect.getMetadata('sequelize:attributes', r.prototype) };
@@ -188,12 +220,18 @@ export class DBService implements OnApplicationShutdown {
 				keys = r.getAttributes();
 			} catch (e) {
 				keys = {
-					id: 'id',
+					id: '',
 					...Reflect.getMetadata('sequelize:attributes', r.prototype),
 					createdAt: '',
 					updatedAt: '',
 					deletedAt: '',
 				};
+				if (options?.id === false) delete keys.id;
+				if (options?.date === false) {
+					delete keys.createdAt;
+					delete keys.updatedAt;
+					delete keys.deletedAt;
+				}
 			}
 		}
 		return Object.keys(keys);
@@ -287,7 +325,7 @@ export class DBService implements OnApplicationShutdown {
 	//Sequelize封装方法
 	public async seqGetIn<T = any>(
 		r: Repo | Model | RepoOptions | RepoData,
-		selFields: string | string[],
+		selFields: undefined | string | string[],
 		inField: string,
 		inValues: any[],
 		additionalWhere?: WhereOptions<any>,
@@ -295,7 +333,7 @@ export class DBService implements OnApplicationShutdown {
 		raw = true
 	): Promise<T[]> {
 		let { repo } = await this.getRepoData(r);
-		let attributes = !Array.isArray(selFields) ? selFields.split(',') : selFields;
+		let attributes = !selFields ? undefined : !Array.isArray(selFields) ? selFields.split(',') : selFields;
 		let where = { [inField]: inValues, ...additionalWhere };
 		return repo.findAll({ attributes, where, order, raw }) as any;
 	}

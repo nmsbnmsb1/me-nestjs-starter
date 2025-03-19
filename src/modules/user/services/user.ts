@@ -25,7 +25,7 @@ export class UserService {
 	public static FieldSchemeAll = `UserService.FieldScheme.All`;
 	public static FieldSchemeCommon = `UserService.FieldScheme.Common`;
 	public fieldScheme = new CacheDB.FieldScheme(this.dbService.getRepoAllFields(this.userRepo), {
-		[UserService.FieldSchemeAll]: `id,uuid,username,password,lastLoginAt`,
+		[UserService.FieldSchemeAll]: { 'createdAt,updatedAt,deletedAt': false },
 		[UserService.FieldSchemeCommon]: `id,uuid,username,lastLoginAt`,
 	});
 

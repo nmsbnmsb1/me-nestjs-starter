@@ -13,6 +13,7 @@ import { DBModule } from '@libs/db';
 import { EncryptModule } from '@libs/encrypt';
 import { ExceptionModule } from '@libs/exception';
 import { ValidatorModule } from '@libs/validator';
+import { WinstonModule, getWinston } from '@libs/winston';
 
 //业务模块
 import { JWTAuthModule } from '@modules/auth/jwt';
@@ -23,6 +24,7 @@ import { UserModule } from '@modules/user';
 	imports: [
 		//系统模块
 		ConfigModule,
+		WinstonModule,
 		ClsModule,
 		DBModule.forRoot(),
 		EncryptModule,
@@ -38,7 +40,11 @@ export class AppModule {}
 
 //bootstrap
 (async () => {
-	let app = await NestFactory.create(AppModule, { rawBody: true });
+	let app = await NestFactory.create(AppModule, {
+		rawBody: true,
+		//全局替换logger
+		logger: getWinston('Nest'),
+	});
 	let configService = app.get(ConfigService);
 	//enable-cros
 	{

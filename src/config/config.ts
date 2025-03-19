@@ -30,7 +30,6 @@ export default {
 	db: {
 		//基础配置
 		base_sqlite: {
-			//logging: ['query'],
 			storage: path.resolve('./dbs'),
 		},
 		//其他数据库

@@ -12,6 +12,7 @@ export class DBModule {
 		let imports = [];
 		//导入所有的数据库
 		for (let key in baseConfig.db) {
+			if (key === 'base') continue;
 			if (key.startsWith('base_')) continue;
 			if (baseConfig.db[key].matches) continue;
 			//
