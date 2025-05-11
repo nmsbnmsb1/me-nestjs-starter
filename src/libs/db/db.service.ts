@@ -50,7 +50,6 @@ const sqlLoggerLevel = {
 };
 export const SqlLogger = winston.createLogger({
 	level: sqlLoggerLevel[env] ? sqlLoggerLevel[env].level : sqlLoggerLevel.default.level,
-	transports: [new winston.transports.Console()],
 	format: winston.format.combine(
 		winston.format.timestamp({ format: 'MM/DD/YYYY HH:mm:ss' }),
 		winston.format.ms(),
@@ -60,6 +59,7 @@ export const SqlLogger = winston.createLogger({
 			return `${colors.blue(`[Sequelize]`)} ${timestamp} ${colors.blue(`${type}`)} ${colors.blue.dim(message)} ${colors.yellow(ms)}`;
 		})
 	),
+	transports: [new winston.transports.Console()],
 });
 
 export function getSequelizeConfig(name: string, thisConfig: any, dbConfig: any) {

@@ -2,12 +2,12 @@ import { Global, Logger, Module } from '@nestjs/common';
 import { WinstonModule as NestWinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 
-import { isDevelopment } from '@libs/utils';
+import { isDevelopment, local } from '@libs/utils';
 import { NestLikeFormat } from './nest-format';
 
 export function getWinston(appName: string) {
 	return NestWinstonModule.createLogger({
-		level: isDevelopment ? 'debug' : 'info',
+		level: local ? 'debug' : isDevelopment ? 'verbose' : 'info',
 		format: winston.format.combine(...NestLikeFormat(appName)),
 		transports: [new winston.transports.Console()],
 	});
